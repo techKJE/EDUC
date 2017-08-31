@@ -1,0 +1,14 @@
+{
+	"result":"ok",
+	"message":"",
+	"packages":[{
+		"url":"http://127.0.0.1:8811/enc_en.zip",
+		"zone":"C",
+		"fileCategory":"EN",
+		"fileName":"enc_en.zip",
+		"fileSize":639076234,
+		"destPath":"S-101",
+		"version":"NTM0021",
+		"releaseDate":"20170412"
+	}]
+}

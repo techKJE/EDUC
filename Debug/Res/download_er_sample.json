@@ -1,0 +1,14 @@
+{
+	"result":"ok",
+	"message":"",
+	"packages":[{
+		"url":"http://127.0.0.1:8811/enc_er.zip",
+		"fileCategory":"ER",
+		"zone":"C",
+		"fileName":"enc_er.zip",
+		"fileSize":639076234,
+		"destPath":"S-101",
+		"version":"NTM0022",
+		"releaseDate":"20170420"
+	}]
+}

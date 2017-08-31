@@ -1,0 +1,219 @@
+/* -------------------------------------------------------- */
+/** Common Utility for EDUC and EDUS
+File name : SV40EDUUtil.java 
+Author : Sang Whan Oh(sang@kjeng.kr)
+Creation Date : 2017-04-05
+Version : v0.1
+Rev. history :
+Modifier : 
+*/
+/* -------------------------------------------------------- */
+package re.kr.enav.sv40.educ.util;
+
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+/**
+ * @brief 유틸리티 클래스
+ * @details Json Object를 쉽게 사용하도록 간편 기능 제공 유틸리티
+ * @author Sang Whan Oh
+ * @date 2017.04.03
+ * @version 0.0.1
+ *
+ */
+public class SV40EDUUtil {
+	static public final int RETRY_MAXCOUNT = 3;
+	static public final int RETRY_TIMEWAIT = 10000;
+	static public boolean LOCALNETWORK_STATE = true;
+	
+	/**
+	 * @brief parse query at json and return found json
+	 * @details parse query for json, and return string 
+	 */			
+	static public String queryJsonValueToString(JsonObject json, String query) {
+		String ret="";
+		
+		JsonElement el = queryJsonElement(json, query);
+		if (el != null) ret = el.getAsString();
+		
+		return ret;
+	}
+	/**
+	 * @brief parse query at json and return found json
+	 * @details parse query and return json element
+	 */			
+	static public JsonElement queryJsonElement(JsonObject json, String query) {
+		JsonElement ret= null;
+		
+		String items[] = query.split("\\.");
+		JsonObject jsonFound = json;
+		for (int i=0;i<items.length-1;i++) {
+			jsonFound = jsonFound.getAsJsonObject(items[i]);
+			if (jsonFound == null) return ret;
+		}
+		
+		if (jsonFound != null) {
+			ret = jsonFound.get(items[items.length-1]);
+		}
+		
+		return ret;
+	}	
+	/**
+	 * @brief set json property by query and set value as string 
+	 * @details set json property by query and set value as string 
+	 * @param json target to find jsonproperty
+	 * @param query query string to find with . separator
+	 * @param value value for set
+	 */			
+	static public boolean setJsonPropertyByQuery(JsonObject json, String query, String value) {
+		boolean ret = false;
+		
+		String items[] = query.split("\\.");
+		JsonObject jsonFound = json;
+		for (int i=0;i<items.length-1;i++) {
+			jsonFound = jsonFound.getAsJsonObject(items[i]);
+			if (jsonFound == null) return ret;
+		}
+		
+		if (jsonFound != null) {
+			jsonFound.addProperty(items[items.length-1], value);
+			ret = true;
+		}		
+		
+		return ret;
+	}
+	/**
+	 * @brief read json file and return JsonObject 
+	 * @details read json file and return JsonObject  
+	 * @param path path of json file
+	 * @return parsed JsonObject
+	 */		
+	static public JsonObject getJsonObjectFromFile(String path) {
+		JsonObject json = null;
+		JsonParser parser = new JsonParser();
+		FileInputStream in;
+		try {
+			in = new FileInputStream(path);
+			JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+			json = (JsonObject)parser.parse(reader);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return json;
+	}
+	/**
+	 * @brief read json file and return JsonObject 
+	 * @details read json file and return JsonObject  
+	 * @param path path of json file
+	 * @return parsed JsonObject
+	 */		
+	static public JsonArray getJsonArrayFromFile(String path) {
+		JsonArray json = null;
+		JsonParser parser = new JsonParser();
+		FileInputStream in;
+		try {
+			in = new FileInputStream(path);
+			JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+			json = (JsonArray)parser.parse(reader);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return json;
+	}	
+	/**
+	 * @brief read json file
+	 * @details read json file and return JsonObject
+	 * param path path of json file
+	 */		
+	static public JsonObject readJson(String path) throws Exception {
+		JsonObject json = null;
+
+		JsonParser parser = new JsonParser();
+		FileInputStream in = null;
+		
+		JsonReader reader = null;
+		in = new FileInputStream(path);
+		reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+		json= (JsonObject)parser.parse(reader);
+			
+		if (in != null) {
+			in.close();
+		}		
+		
+		return json;
+	}	
+	/**
+	 * @brief write json to file
+	 * @details write json
+	 * @param json target to write
+	 * @param path file path to write
+	 */		
+	static public boolean writeJson(JsonObject json, String path) {
+		boolean bSuccess = true;
+
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		String jsonString = gson.toJson(json);
+		
+		try {
+		 FileWriter writer = new FileWriter(path);
+		 writer.write(jsonString);
+		 writer.close();
+		} catch (IOException e) {
+			bSuccess = false;
+			e.printStackTrace();
+		}
+		
+		return bSuccess;
+	}
+	
+	/**
+	 * @brief get local address
+	 * @details get local address
+	 */			
+	static public String getLocalAddr() {
+		try {
+			
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface inf = en.nextElement();
+				for (Enumeration<InetAddress> addr = inf.getInetAddresses(); addr.hasMoreElements();) {
+					InetAddress iaddr = addr.nextElement();
+					// 192.168.x.x : virtualbox ip 처리가 안됨
+					if (!iaddr.isLoopbackAddress() && !iaddr.isLinkLocalAddress() && iaddr.isSiteLocalAddress())
+						return iaddr.getHostAddress().toString();
+				}
+			}
+		} catch (Exception e) {
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * @brief ping check
+	 * @details ping check
+	 */			
+	static public boolean ping(String host, int timeout) {
+		try {
+			InetAddress target = InetAddress.getByName(host);
+			return target.isReachable(timeout);
+		} catch (Exception e) {
+			return false;
+		}
+	}
+}

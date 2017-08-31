@@ -1,0 +1,26 @@
+{
+	"enc":
+	{
+		"zone":"1234",
+		"permit":"abcd",
+		"path":"c:\\test",
+		"schedule":"day"
+	},
+	"ecs":
+	{
+		"position":{
+			"lat":"36",
+			"lon":"127"
+		},
+		"ship":{
+			"name":"kjeng"
+		},
+		"maker":"samyoung",
+		"model":"ecs001",
+		"serial":"123456789"		
+	},
+	"cloud":{
+		"srcMRN": "urn:mrn:imo:imo-no:1000003",
+    	"destMRN": "urn:mrn:imo:imo-no:0000112"
+	}
+}
