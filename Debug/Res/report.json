@@ -130,8 +130,13 @@
   "zones": [
     {
       "zone": "C",
-      "version": "NTM0021",
-      "releaseDate": "20170412"
+      "version": "NTM0022",
+      "releaseDate": "20170420"
+    },
+    {
+      "zone": "E2",
+      "version": "0.0.2",
+      "releaseDate": "2016-01-31"
     }
   ]
 }

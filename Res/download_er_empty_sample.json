@@ -1,5 +1,5 @@
 {
-	"result":"ok",
-	"message":"nothing to update",
-	"packages":[]
+	"SV40ENCUpdate": [{          
+		"message": "{\"result\":\"ok\",\"message\":\"nothing to update\",\"packages\":[]}"
+	}]
 }

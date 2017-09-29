@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import com.google.gson.JsonArray;
@@ -43,9 +44,9 @@ public class SV40EDUCMCServer {
 	private static final String PORT_KEY = "-port";
 	
 	public static void main(String args[]) throws Exception{
-		MMSConfiguration.MMS_URL="127.0.0.1:8088";
+		MMSConfiguration.MMS_URL="www.mms-kaist.com:8088";
 		String myMRN = "urn:mrn:smart-navi:service:sv40";
-		int port = 8902;
+		int port = 8088;
 		
 		for(int i=0; i<args.length; i+=2)
 	    {
@@ -64,14 +65,19 @@ public class SV40EDUCMCServer {
 	    }
 		
 		MMSClientHandler server = new MMSClientHandler(myMRN);
+		MMSClientHandler sender = new MMSClientHandler(myMRN);	//MCC 목업으로 직접 회신 하지 못하기에 필요함
+		sender.setSender(new MMSClientHandler.ResponseCallback() {
+			//Response Callback from the request message
+			@Override
+			public void callbackMethod(Map<String, List<String>> headerField, String message) {
+				// TODO Auto-generated method stub
+				System.out.println(message);
+			}
+		});
 		
 		server.setServerPort(port, "/edus", new MMSClientHandler.RequestCallback() {
-			//Request Callback from the request message
-			//it is called when client receives a message
-			
 			@Override
 			public int setResponseCode() {
-				// TODO Auto-generated method stub
 				return 200;
 			}
 			
@@ -79,9 +85,13 @@ public class SV40EDUCMCServer {
 			public String respondToClient(Map<String,List<String>> headerField, String message) {
 				String response = "error";
 				try {
-					// parse result
-					response = SV40EDUCMCServer.getResponse(message);
-						
+					List<String> values = (List<String>)headerField.get("srcMRN");
+					String destMRN = values.get(0);
+					String responseMessage = SV40EDUCMCServer.getResponse(message);
+					sender.sendPostMsg(destMRN, responseMessage);
+										
+					response = "OK";
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -91,7 +101,6 @@ public class SV40EDUCMCServer {
 
 			@Override
 			public Map<String, List<String>> setResponseHeader() {
-				// TODO Auto-generated method stub
 				return null;
 			}
 		});
@@ -136,7 +145,8 @@ public class SV40EDUCMCServer {
 		
 		if (category.equals("EN")) {
 			try {
-				response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_en_sample.json")));
+				//response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_en_sample.json")));
+				response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_en_ftp_sample.json")));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -1,14 +1,5 @@
 {
-	"result":"ok",
-	"message":"",
-	"packages":[{
-		"url":"http://127.0.0.1:8811/enc_en.zip",
-		"zone":"C",
-		"fileCategory":"EN",
-		"fileName":"enc_en.zip",
-		"fileSize":639076234,
-		"destPath":"S-101",
-		"version":"NTM0021",
-		"releaseDate":"20170412"
+	"SV40ENCUpdate": [{          
+		"message": "{\t\t\t\t\t\"result\":\"ok\",\t\t\t\t\t\t\t\t\t\t\"message\":\"\",\t\t\t\t\t\t\t\t\t\t\"packages\":[{\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\"url\":\"http:\/\/127.0.0.1:8811\/enc_en.zip\",\t\t\t\t\t\t\t\t\t\t\t\"zone\":\"E2\",\t\t\t\t\t\t\t\t\t\t\"fileCategory\":\"EN\",\t\t\t\t\t\t\t\t\"fileName\":\"\",\t\t\t\t\t\t\t\t\t\"fileSize\":2535541,\t\t\t\t\t\t\t\t\t\t\"destPath\":\"\",\t\t\t\t\t\t\t\t\t\"version\":\"0.0.2\",\t\t\t\t\t\t\t\t\t\t\"releaseDate\":\"2016-01-31\"\t\t\t\t\t\t\t\t}]\t\t\t\t\t\t\t\t }"        
 	}]
 }

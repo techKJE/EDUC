@@ -18,10 +18,10 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.net.ConnectException;
-import java.net.BindException;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import kr.ac.kaist.mms_client.MMSClientHandler;
 import re.kr.enav.sv40.educ.controller.SV40EDUCController;
 import re.kr.enav.sv40.educ.util.SV40EDUErrCode;
@@ -39,10 +39,14 @@ import re.kr.enav.sv40.educ.util.TaskManager;
 public class SV40EDUCMCClient extends Thread{
 	private SV40EDUCController m_controller;
 	private JsonObject m_config;
-	private MMSClientHandler m_handler;
+	private MMSClientHandler m_handlerMCSender;
+	private MMSClientHandler m_handlerMCReceiver;
 	private String m_strSrcMRN;
-	private String m_strDestMRN;
+	private String m_strDestServiceMRN;
+	private String m_strDestMccMRN;
 	private int m_retryCnt;
+	
+	private boolean m_bDebugHeader = true;
 	
 	private String m_strMessageToSend="";
 	
@@ -52,7 +56,8 @@ public class SV40EDUCMCClient extends Thread{
 		m_controller = controller;
 		m_config = m_controller.getConfig();
 		m_strSrcMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.srcMRN");
-		m_strDestMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.destMRN");
+		m_strDestServiceMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.destServiceMRN");
+		m_strDestMccMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.destMccMRN");
 	}
 	public SV40EDUCMCClient(SV40EDUCController controller, String toSendMessage) {
 		this(controller);
@@ -76,7 +81,7 @@ public class SV40EDUCMCClient extends Thread{
 			List<String> valueList = new ArrayList<String>();
 			valueList.add("1234567890");
 			headerfield.put("AccessToken",valueList);
-			m_handler.setMsgHeader(headerfield);
+			m_handlerMCSender.setMsgHeader(headerfield);
 			
 			m_retryCnt=0;
 			
@@ -89,7 +94,7 @@ public class SV40EDUCMCClient extends Thread{
 					else
 					{
 						try {
-							m_handler.sendPostMsg(m_strDestMRN, "/edus", message);
+							m_handlerMCSender.sendPostMsg(m_strDestServiceMRN, "/edus", message);
 							timer.cancel();
 						} catch (ConnectException ce) {
 							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "MMSServer");
@@ -105,42 +110,89 @@ public class SV40EDUCMCClient extends Thread{
 			timer.schedule(task, 0, SV40EDUUtil.RETRY_TIMEWAIT);
 			
 		} catch (Exception e) {
+			e.printStackTrace();
 			m_taskManager.failed();	// delegate to the TaskManager
 		}
+		
 	}	
-
+	
+	/**
+	 * @brief initialize MC Sender 
+	 */	
+	private void initSender() throws Exception {
+		m_handlerMCSender = new MMSClientHandler(m_strSrcMRN);
+		m_handlerMCSender.setSender(new MMSClientHandler.ResponseCallback (){
+			@Override
+			public void callbackMethod(Map<String, List<String>> headerField, String message) {
+				printHeader("MC Sender", headerField);
+				if (message!= null && !message.isEmpty()) {
+					m_controller.addLog("Sender Result Message:"+message);
+				}
+			}
+		});		
+	}
+	
+	private void printHeader(String title, Map<String, List<String>> headerField) {
+		if (m_bDebugHeader == false) return;
+		
+		Iterator<String> iter = headerField.keySet().iterator();
+		System.out.println("======="+title+"=======");
+		while (iter.hasNext()){
+			String key = iter.next();
+			System.out.println(key+":"+headerField.get(key).toString());
+		}						
+	}
+	
+	/**
+	 * @brief initialize MC Receiver, this polling message from MCC 
+	 */	
+	private void initReceiver() throws Exception {
+		int pollInterval = 1000;
+		m_handlerMCReceiver = new MMSClientHandler(m_strSrcMRN);
+		
+		m_handlerMCReceiver.startPolling(m_strDestMccMRN, m_strDestServiceMRN, pollInterval, new MMSClientHandler.PollingResponseCallback() {
+			@Override
+			public void callbackMethod(Map<String, List<String>> headerField, List<String> messages) {
+				printHeader("MC Receiver",headerField);
+				
+				Iterator<String> iter = messages.iterator();
+				while (iter.hasNext()){
+					String message = iter.next();
+					JsonParser parser = new JsonParser();
+					try {
+						/* response from MCC
+						 * {
+						 *		"SV40ENCUpdate": [{          
+						 *			"message": "{ ......}"
+						 *		}]
+						 *	}
+						 * 
+						 */
+						JsonObject jsonResponse = (JsonObject)parser.parse(message);
+						JsonArray jsonTopic = jsonResponse.get("SV40ENCUpdate").getAsJsonArray();
+						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
+						String strMessage = jsonMessage.get("message").getAsString();
+						
+						jsonResponse =  (JsonObject)parser.parse(strMessage);
+						
+						m_controller.processMCMessageReceive(jsonResponse);
+					} catch (Exception e) {
+						m_controller.addLog("Receiver failed to parse message from EDUS:"+message);
+					}
+				}										
+			}
+		});
+		
+	}
+	
 	public void run() {
 		try {
-			m_handler = new MMSClientHandler(m_strSrcMRN);
-			
-			m_handler.setSender(new MMSClientHandler.ResponseCallback (){
-				//Response Callback from the request message
-				@Override
-				public void callbackMethod(Map<String, List<String>> headerField, String message) {
-					Iterator<String> iter = headerField.keySet().iterator();
-					while (iter.hasNext()){
-						String key = iter.next();
-						System.out.println(key+":"+headerField.get(key).toString());
-					}					
-					if (!message.isEmpty()) {
-						JsonParser parser = new JsonParser();
-						try {
-							JsonObject jsonResponse = (JsonObject)parser.parse(message);
-							m_controller.processMCMessageReceive(jsonResponse);
-						} catch (JsonSyntaxException e) {
-							// failed to parse
-							m_controller.addLog(message);
-						}
-				}
-				}
-			});
+			initSender();
+			initReceiver();
 			
 			if (!m_strMessageToSend.isEmpty()) {
 				sendMessage(m_strMessageToSend);
 			}
-		} catch (BindException be) {
-			//mrn이 변경되어 client를 재시작할때 포트 사용중 오류 발생 
-			m_controller.addLog("Already Bind Address");			
 		} catch (Exception e) {
 			
 			m_taskManager.failed();	// delegate to the TaskManager

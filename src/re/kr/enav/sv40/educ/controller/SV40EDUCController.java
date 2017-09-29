@@ -21,6 +21,7 @@ import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.progress.ProgressMonitor;
 import re.kr.enav.sv40.educ.mc.SV40EDUCMCClient;
 import re.kr.enav.sv40.educ.util.LocalNetworkState;
+import re.kr.enav.sv40.educ.util.SV40EDUCDownloader;
 import re.kr.enav.sv40.educ.util.SV40EDUCHTTPDownloader;
 import re.kr.enav.sv40.educ.util.SV40EDUErrCode;
 import re.kr.enav.sv40.educ.util.SV40EDUUtil;
@@ -122,16 +123,21 @@ public class SV40EDUCController {
 	 */		
 	public void applyConfigChange(JsonObject jsonChanged) {
 		//"cloud.srcMRN", "cloud.destMRN"
-		String nsrcMRN = SV40EDUUtil.queryJsonValueToString(jsonChanged, "cloud.srcMRN");
-		String ndestMRN = SV40EDUUtil.queryJsonValueToString(jsonChanged, "cloud.destMRN");
+		String newSrcMRN = SV40EDUUtil.queryJsonValueToString(jsonChanged, "cloud.srcMRN");
+		String newDestServiceMRN = SV40EDUUtil.queryJsonValueToString(jsonChanged, "cloud.destServiceMRN");
+		String newDestMccMRN = SV40EDUUtil.queryJsonValueToString(jsonChanged, "cloud.destMccMRN");
+		
 		String srcMRN = SV40EDUUtil.queryJsonValueToString(m_jsonConfig, "cloud.srcMRN");
-		String destMRN = SV40EDUUtil.queryJsonValueToString(m_jsonConfig, "cloud.destMRN");
+		String destServiceMRN = SV40EDUUtil.queryJsonValueToString(m_jsonConfig, "cloud.destServiceMRN");
+		String destMccMRN = SV40EDUUtil.queryJsonValueToString(m_jsonConfig, "cloud.destMccMRN");
 		
 		m_jsonConfig = jsonChanged;
 		saveConfig(m_jsonConfig);
 		
 		// mrn이 변경되었을때 mcclient 재시작
-		if (!srcMRN.equals(nsrcMRN) || !destMRN.equals(ndestMRN)) {
+		if (!srcMRN.equals(newSrcMRN) 
+				|| !destServiceMRN.equals(newDestServiceMRN)
+				|| !destMccMRN.equals(newDestMccMRN)) {
 			stopMCClient();
 			startMCClient();
 		}
@@ -374,10 +380,8 @@ public class SV40EDUCController {
 		
 		m_taskDownload.setTask(new TaskManager.Task() {
 			@Override
-			public void work() {			
-				SV40EDUCHTTPDownloader dn = new SV40EDUCHTTPDownloader(controller,  jsonMessage);
-				dn.setTaskManager(m_taskDownload);
-				dn.start();
+			public void work() {		
+				new SV40EDUCDownloader(controller, jsonMessage, m_taskDownload);
 			}
 		
 		});

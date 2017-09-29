@@ -1,5 +1,5 @@
 {
-	"result":"error",
-	"message":"invalid location",
-	"packages":[]
+	"SV40ENCUpdate": [{          
+		"message": "{\"result\":\"error\",\"message\":\"invalid location\",\"packages\":[]}"
+	}]
 }

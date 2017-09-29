@@ -1,10 +1,9 @@
 {
   "enc": {
-    "zone": "C",
-    "permit": "abcd",
+    "zone": "A1",
+    "license": "KRE001170001",
     "path": "c:\\test",
-    "schedule": "day",
-    "license": "11111"
+    "schedule": "day"
   },
   "ecs": {
     "position": {
@@ -12,14 +11,15 @@
       "lon": "127"
     },
     "ship": {
-      "name": "kjeng"
+      "name": "eNavi"
     },
     "maker": "samyoung",
     "model": "ecs001",
     "serial": "123456789"
   },
   "cloud": {
-    "srcMRN": "urn:mrn:imo:imo-no:1000003",
-    "destMRN": "urn:mrn:smart-navi:service:sv40"
+    "srcMRN": "urn:mrn:smart-navi:s:kjesv40",
+    "destServiceMRN": "urn:mrn:smart-navi:service:sv40",
+    "destMccMRN": "urn:mrn:smart-navi:device:mms1"
   }
 }

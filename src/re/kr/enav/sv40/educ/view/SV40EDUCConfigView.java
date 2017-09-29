@@ -50,7 +50,7 @@ public class SV40EDUCConfigView extends JDialog implements ActionListener  {
 	private String m_fields[] = {
 			"enc.zone", "enc.license", "enc.path", "enc.schedule",
 			"ecs.position.lat", "ecs.position.lon", "ecs.ship.name", "ecs.maker", "ecs.model", "ecs.serial",
-			"cloud.srcMRN", "cloud.destMRN"
+			"cloud.srcMRN", "cloud.destServiceMRN", "cloud.destMccMRN"
 		}; 	/**< name of ui component field */
 	
 	public HashMap<String,JComponent> m_mapComponent;
@@ -385,7 +385,21 @@ public class SV40EDUCConfigView extends JDialog implements ActionListener  {
 		c.weightx = 0.8;
 		txtField = new JTextField();
 		panel.add(txtField, c);			
-		m_mapComponent.put("cloud.destMRN" , txtField);
+		m_mapComponent.put("cloud.destServiceMRN" , txtField);
+		
+		c.gridx = 0;
+		c.gridy = 2;
+		c.weighty = 1;
+		c.weightx = 0.1;
+		c.insets = new Insets(5,5,5,5);  //top padding
+		panel.add(new JLabel("Dest. MRN(MCC)"), c);
+		
+		c.gridx = 1;
+		c.gridy = 2;
+		c.weightx = 0.8;
+		txtField = new JTextField();
+		panel.add(txtField, c);			
+		m_mapComponent.put("cloud.destMccMRN" , txtField);
 	}
 	
 	/**
