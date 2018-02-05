@@ -1,5 +1,5 @@
 {
-	"SV40ENCUpdate": [{          
-		"message": "{\t\t\t\t\t\"result\":\"ok\",\t\t\t\t\t\t\t\t\t\t\"message\":\"\",\t\t\t\t\t\t\t\t\t\t\"packages\":[{\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\"url\":\"ftp:\/\/127.0.0.1:21\/enc_en.zip\",\t\t\t\t\t\t\t\t\t\t\t\"zone\":\"E2\",\t\t\t\t\t\t\t\t\t\t\"fileCategory\":\"EN\",\t\t\t\t\t\t\t\t\"fileName\":\"\",\t\t\t\t\t\t\t\t\t\"fileSize\":2535541,\t\t\t\t\t\t\t\t\t\t\"destPath\":\"\",\t\t\t\t\t\t\t\t\t\"version\":\"0.0.2\",\t\t\t\t\t\t\t\t\t\t\"releaseDate\":\"2016-01-31\"\t\t\t\t\t\t\t\t}]\t\t\t\t\t\t\t\t }"        
+	"EncUpdate": [{          
+		"message": "{ \"result\":\"ok\", \"message\":\"\", \"packages\":[{\"url\":\"ftp:\/\/35.186.158.170:21\/uploadENC\/a41d178b-75ba-40fb-a369-eee441b5fc60.zip\",\"zone\":\"A1\",\"encType\":\"S-101\",\"fileCategory\":\"EN\",\"fileName\":\"a41d178b-75ba-40fb-a369-eee441b5fc60.zip\",\"fileSize\":6927218,\"destPath\":\"\",\"version\":\"KR/2017-NTM-001\",\"releaseDate\":\"2017-08-18\"}]}"        
 	}]
 }

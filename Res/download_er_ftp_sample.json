@@ -1,0 +1,5 @@
+{
+	"EncUpdate": [{          
+		"message": "{ \"result\":\"ok\", \"message\":\"\", \"packages\":[{\"url\":\"ftp:\/\/35.186.158.170:21\/uploadENC\/743bdb52-00df-4518-bdf7-b505f24d3085.zip\",\"zone\":\"A1\",\"encType\":\"S-57\",\"fileCategory\":\"ER\",\"fileName\":\"743bdb52-00df-4518-bdf7-b505f24d3085.zip\",\"fileSize\":6927218,\"destPath\":\"\",\"version\":\"KR/2017-NTM-001\",\"releaseDate\":\"2017-08-18\"},{\"url\":\"ftp:\/\/35.186.158.170:21\/uploadENC\/62c416ea-0b6f-471d-be28-5399c7e95c8d.zip\",\"zone\":\"A1\",\"encType\":\"S-57\",\"fileCategory\":\"ER\",\"fileName\":\"62c416ea-0b6f-471d-be28-5399c7e95c8d.zip\",\"fileSize\":2010395,\"destPath\":\"\",\"version\":\"KR/2017-NTM-002\",\"releaseDate\":\"2017-08-25\"}]}"        
+	}]
+}

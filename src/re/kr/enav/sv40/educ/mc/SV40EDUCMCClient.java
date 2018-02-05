@@ -22,7 +22,11 @@ import java.net.ConnectException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import kr.ac.kaist.mms_client.MMSClientHandler;
+import net.etri.pkilib.client.ClientPKILibrary;
+import net.etri.pkilib.tool.ByteConverter;
+
 import re.kr.enav.sv40.educ.controller.SV40EDUCController;
 import re.kr.enav.sv40.educ.util.SV40EDUErrCode;
 import re.kr.enav.sv40.educ.util.SV40EDUErrMessage;
@@ -52,13 +56,28 @@ public class SV40EDUCMCClient extends Thread{
 	
 	private TaskManager m_taskManager =null;		/**< reference task manager */
 	
+	// MIR Cert
+	private String m_hexSignedData;
+	public final static String privateKeyPath = "Res\\PrivateKey.pem";
+	public final static String certPath = "Res\\Certificate.pem";
+	
 	public SV40EDUCMCClient(SV40EDUCController controller) {
 		m_controller = controller;
 		m_config = m_controller.getConfig();
 		m_strSrcMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.srcMRN");
 		m_strDestServiceMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.destServiceMRN");
 		m_strDestMccMRN = SV40EDUUtil.queryJsonValueToString(m_config, "cloud.destMccMRN");
+		
+		// MIR Cert
+		ClientPKILibrary clientPKILib = ClientPKILibrary.getInstance();
+		ByteConverter byteConverter = ByteConverter.getInstance();
+
+		byte[] content = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+		
+		byte[] signedData = clientPKILib.generateSignedData(content, privateKeyPath, certPath);
+		m_hexSignedData = byteConverter.byteArrToHexString(signedData);
 	}
+	
 	public SV40EDUCMCClient(SV40EDUCController controller, String toSendMessage) {
 		this(controller);
 		m_strMessageToSend = toSendMessage;
@@ -81,6 +100,12 @@ public class SV40EDUCMCClient extends Thread{
 			List<String> valueList = new ArrayList<String>();
 			valueList.add("1234567890");
 			headerfield.put("AccessToken",valueList);
+			
+			// MIR cert
+			List<String> certList = new ArrayList<String>();
+			certList.add(m_hexSignedData);
+			headerfield.put("HexSignedData",certList);
+			
 			m_handlerMCSender.setMsgHeader(headerfield);
 			
 			m_retryCnt=0;
@@ -94,7 +119,7 @@ public class SV40EDUCMCClient extends Thread{
 					else
 					{
 						try {
-							m_handlerMCSender.sendPostMsg(m_strDestServiceMRN, "/edus", message);
+							m_handlerMCSender.sendPostMsg(m_strDestServiceMRN, message);
 							timer.cancel();
 						} catch (ConnectException ce) {
 							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "MMSServer");
@@ -169,13 +194,17 @@ public class SV40EDUCMCClient extends Thread{
 						 * 
 						 */
 						JsonObject jsonResponse = (JsonObject)parser.parse(message);
-						JsonArray jsonTopic = jsonResponse.get("SV40ENCUpdate").getAsJsonArray();
+						//JsonArray jsonTopic = jsonResponse.get("SV40ENCUpdate").getAsJsonArray();
+						JsonArray jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
 						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
-						String strMessage = jsonMessage.get("message").getAsString();
+						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
+						//String strMessage = jsonMessage.get("message").getAsString();
+						JsonArray packageObj = jsonMessage2.get("packages").getAsJsonArray();
+						//JsonObject url = packageObj.get(0).getAsJsonObject();
+						//jsonResponse =  (JsonObject)parser.parse(strMessage);
 						
-						jsonResponse =  (JsonObject)parser.parse(strMessage);
-						
-						m_controller.processMCMessageReceive(jsonResponse);
+						//m_controller.processMCMessageReceive(jsonResponse);
+						m_controller.processMCMessageReceive(jsonMessage2);
 					} catch (Exception e) {
 						m_controller.addLog("Receiver failed to parse message from EDUS:"+message);
 					}

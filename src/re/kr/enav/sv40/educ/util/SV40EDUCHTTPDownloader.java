@@ -74,11 +74,15 @@ public class SV40EDUCHTTPDownloader extends Thread {
 			nRet = download(m_strSrcUrl, m_strDestFilePath);
 			if (nRet > 0) {
 				m_controller.completeDownload(m_strDestFilePath, m_jsonFile);
+				m_controller.setDownComplete(true);
 				m_taskManager.completed();
 				return;
 			}
 		} catch (Exception e) {
-			m_taskManager.failed();	// delegate to the TaskManager				
+			if (m_taskManager.retryable() == true)
+				m_taskManager.failed();	// delegate to the TaskManager
+			else
+				m_controller.setDownComplete(true);
 		}
 	}	
 	/**

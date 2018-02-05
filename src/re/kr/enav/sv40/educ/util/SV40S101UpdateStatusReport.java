@@ -88,6 +88,26 @@ public class SV40S101UpdateStatusReport {
 		}
 	}
 	
+	public JsonObject getZone(String zone) {
+		JsonObject jsonTargetZone = null;
+		
+		if (!m_jsonReport.has("zones")) {
+			return jsonTargetZone;
+		}
+		JsonArray jsonZones = m_jsonReport.get("zones").getAsJsonArray();
+		for (int i=0;i<jsonZones.size(); i++) {
+			JsonObject jsonZone = jsonZones.get(i).getAsJsonObject();
+			String localZone = jsonZone.get("zone").getAsString();
+			
+			if (zone.equals(localZone)) {
+				jsonTargetZone = jsonZone;
+				break;
+			}
+		}
+	
+		return jsonTargetZone;
+	}
+	
 	/**
 	 * @brief parse ENC Catalog file and update report
 	 * @details parse ENC Catalog file and update report
@@ -117,15 +137,21 @@ public class SV40S101UpdateStatusReport {
 		}
 		
 		// in case new zone
+		String curVersion = null;
 		if (jsonTargetZone==null) {
 			jsonTargetZone = new JsonObject();
 			jsonZones.add(jsonTargetZone);
+		} else {
+			curVersion = jsonTargetZone.get("version").getAsString();
 		}
 		
-		jsonTargetZone.addProperty("zone", fileZone);
-		jsonTargetZone.addProperty("version", fileVersion);
-		jsonTargetZone.addProperty("releaseDate", fileReleaseDate);
-	
+		// 현재보다 낮은 버전은 기록하지 않는다
+		if (curVersion == null || curVersion.compareTo(fileVersion) < 0) {
+			jsonTargetZone.addProperty("zone", fileZone);
+			jsonTargetZone.addProperty("version", fileVersion);
+			jsonTargetZone.addProperty("releaseDate", fileReleaseDate);
+		}
+		
 		return bRet;
 	}
 	/**

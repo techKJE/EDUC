@@ -53,11 +53,19 @@ public class TaskManager {
 	public void completed() {
 		System.out.println("Completed");
 	}
+	
+	/**
+	 * @brief retry availabitity
+	 */	
+	public boolean retryable() {
+		return (m_nRetryCount+1 < m_maxRetryCount)? true:false;
+	}
+	
 	/**
 	 * @brief Call back when task is failed, retry
 	 */		
 	public void failed() {
-		if (m_nRetryCount < m_maxRetryCount) {
+		if (m_nRetryCount <= m_maxRetryCount) {
 			m_nRetryCount++;
 			if (m_threadTask != null) {
 				m_threadTask.interrupt();

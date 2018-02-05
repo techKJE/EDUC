@@ -25,8 +25,8 @@ public class SV40EDUCFTPDownloader extends Thread {
 	static final public int TIME_WAIT_TRYDOWNLOAD = 1000;
 	static final public int TIME_WAIT_CONNECT = 1000;
 	static final public int MAX_COUNT_TRYDOWNLOAD = 10;
-	static final public String FTP_USER_ID = "enavi";
-	static final public String FTP_USER_PASSWORD = "enavi";
+	static final public String FTP_USER_ID = "ftpUser"/*"enavi"*/;
+	static final public String FTP_USER_PASSWORD = "ftpUser"/*"enavi"*/;
 
 	protected int m_nReadTimeout = 30000;		/**< milliseconds time outs to download */
 	protected int m_nUnitSizeOfSave = 1024;		/**< unit size of download request, file recorded as unit */
@@ -72,11 +72,15 @@ public class SV40EDUCFTPDownloader extends Thread {
 			nRet = download(m_strSrcUrl, m_strDestFilePath);
 			if (nRet > 0) {
 				m_controller.completeDownload(m_strDestFilePath, m_jsonFile);
+				m_controller.setDownComplete(true);
 				m_taskManager.completed();
 				return;
 			}
 		} catch (Exception e) {
-			m_taskManager.failed();	// delegate to the TaskManager				
+			if (m_taskManager.retryable() == true)
+				m_taskManager.failed();	// delegate to the TaskManager
+			else
+				m_controller.setDownComplete(true);
 		}
 	}	
 	/**
@@ -110,6 +114,8 @@ public class SV40EDUCFTPDownloader extends Thread {
 		ftp.setConnectTimeout(TIME_WAIT_CONNECT);
 		
 		String fileName = m_url.getFile();
+		if (fileName.startsWith("/"))
+			fileName = fileName.substring(1);
 		
 		if (lRet != -1) {
 			try {
@@ -126,45 +132,52 @@ public class SV40EDUCFTPDownloader extends Thread {
 			ftp.login(FTP_USER_ID, FTP_USER_PASSWORD);
 		}
 		if (lRet > -1) {
-			FTPFile[] remoteFiles = ftp.listFiles(fileName);
-			FTPFile remoteFile = remoteFiles[0];
-			remains = remoteFile.getSize();
+			try {
+				FTPFile[] remoteFiles = ftp.listFiles(fileName);
+				FTPFile remoteFile = remoteFiles[0];
+				remains = remoteFile.getSize();
 			
-			lengthOfFile = remains + fileSize;
-			 
-			if (remains <= DOWNLOAD_DONE) {
-				// file not found
-				lRet = -1;
-			} else if (remains == fileSize) {
-				lRet = lengthOfFile;
-			} else {
-				try {
-					if (fileSize < lengthOfFile) {
-						m_controller.updateDownloadProgress(0, lengthOfFile);
-						OutputStream os = Channels.newOutputStream(output.getChannel());
-						ftp.setRestartOffset(fileSize);
-						boolean bRet = ftp.retrieveFile("enc_en.zip", os);
-						if (bRet == true) {
-							m_controller.updateDownloadProgress(lengthOfFile, lengthOfFile);
-							lRet = lengthOfFile;
+				lengthOfFile = remains + fileSize;
+				 
+				if (remains <= DOWNLOAD_DONE) {
+					// file not found
+					lRet = -1;
+				} else if (remains == fileSize) {
+					lRet = lengthOfFile;
+				} else {
+					try {
+						if (fileSize < lengthOfFile) {
+							m_controller.updateDownloadProgress(0, lengthOfFile);
+							OutputStream os = Channels.newOutputStream(output.getChannel());
+							ftp.setRestartOffset(fileSize);
+							boolean bRet = ftp.retrieveFile(fileName, os);
+							//boolean bRet = ftp.retrieveFile("enc_en.zip", os);
+							if (bRet == true) {
+								m_controller.updateDownloadProgress(lengthOfFile, lengthOfFile);
+								lRet = lengthOfFile;
+							}
 						}
+	
+					} catch (CopyStreamException  e) {
+						// file not found or failure
+						lRet = -1;
+						errorCode = 3;
+					} catch (FTPConnectionClosedException e2) {
+						lRet = -1;
+						errorCode = 4;
+					} catch (IOException e1) {
+						// connect fail
+						errorCode = 5;
+						lRet = -1;					
 					}
-
-				} catch (CopyStreamException  e) {
-					// file not found or failure
-					lRet = -1;
-					errorCode = 3;
-				} catch (FTPConnectionClosedException e2) {
-					lRet = -1;
-					errorCode = 4;
-				} catch (IOException e1) {
-					// connect fail
-					errorCode = 5;
-					lRet = -1;					
 				}
-				
+			} catch (Exception e) {
+				// file not found or failure
+				lRet = -1;
+				errorCode = 3;			
 			}
 		}
+		
 		if (output != null) {
 			output.close();
 		}

@@ -292,7 +292,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	 * @details main view test
 	 */
 	public static void main(String args[]) {
-		MMSConfiguration.MMS_URL="143.248.55.83:8088";
+		//MMSConfiguration.MMS_URL="143.248.55.83:8088";
+		MMSConfiguration.MMS_URL="www.mms-kaist.com:8088";
 		for(int i=0; i<args.length; i+=2)
 	    {
 	        String key = args[i];

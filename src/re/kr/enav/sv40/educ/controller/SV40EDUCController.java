@@ -40,6 +40,7 @@ import re.kr.enav.sv40.educ.util.SV40EDUErrMessage;
 public class SV40EDUCController {
 	private TaskManager m_taskDownload;
 	private TaskManager m_taskMC;
+	private boolean m_downComplete;
 	
 	public interface CallbackView {
 		void updateProgress(int nPercent, String label);
@@ -169,7 +170,7 @@ public class SV40EDUCController {
 		
 		JsonObject jsonRequest = new JsonObject();
 		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
+		//jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
 		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
 		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
 		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
@@ -178,9 +179,39 @@ public class SV40EDUCController {
 		
 		jsonRequest.addProperty("category", "EN");
 		
+		JsonArray zones = new JsonArray();
+		
+		//JsonObject zone = new JsonObject();
+		//zone.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
+		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
+		
+		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
+		JsonObject jsonLocalZone = report.getZone(localZone);
+		if (jsonLocalZone == null) {
+			JsonObject zone = new JsonObject();
+			zone.addProperty("zone", localZone);
+			zone.addProperty("version", "");
+			zone.addProperty("releaseDate", "");
+			zones.add(zone);
+		} else {
+			zones.add(jsonLocalZone);
+		}
+		jsonRequest.add("zones", zones);
+		
+		
+		JsonObject jsonRequestFull = new JsonObject();
+	
+		//MSG.addProperty("message", "1234");
+		JsonArray testArrayJson = new JsonArray();
+		JsonObject MSG = new JsonObject();
+		MSG.addProperty("message", jsonRequest.toString());
+		testArrayJson.add(MSG);
+		jsonRequestFull.add("EncReq", testArrayJson);
+		
 		addLog("Requested update check for - EN");
 		
-		m_mcClient.sendMessage(jsonRequest.toString());
+		//m_mcClient.sendMessage(jsonRequest.toString());
+		m_mcClient.sendMessage(jsonRequestFull.toString());
 	
 		return bRet;
 	}
@@ -191,7 +222,6 @@ public class SV40EDUCController {
 	public boolean requestDownloadER() {
 		boolean bRet = true;
 
-		
 		// 내부네트웍 확인
 		if (SV40EDUUtil.LOCALNETWORK_STATE == false) {
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
@@ -203,7 +233,7 @@ public class SV40EDUCController {
 		
 		JsonObject jsonRequest = new JsonObject();
 		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
+		//jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
 		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
 		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
 		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
@@ -215,12 +245,23 @@ public class SV40EDUCController {
 		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
 		JsonObject jsonReport = report.toJson();
 		/* remove cells property for the limit of size */
-		jsonReport.add("cells", null);
+//		jsonReport.add("cells", null);
+//		jsonReport.add("encs", null);
+//		jsonRequest.add("report", jsonReport);
 		
-		jsonRequest.add("report", jsonReport);
+		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
+		jsonRequest.add("zones", jsonUserZones);
+		JsonObject jsonRequestFull = new JsonObject();
+		
+		JsonArray testArrayJson = new JsonArray();
+		JsonObject MSG = new JsonObject();
+		MSG.addProperty("message", jsonRequest.toString());
+		testArrayJson.add(MSG);
+		jsonRequestFull.add("EncReq", testArrayJson);
 		
 		addLog("Requested update check for - ER");
-		m_mcClient.sendMessage(jsonRequest.toString());
+		//m_mcClient.sendMessage(jsonRequest.toString());
+		m_mcClient.sendMessage(jsonRequestFull.toString());
 		
 		return bRet;
 	}
@@ -246,7 +287,24 @@ public class SV40EDUCController {
 			m_callbackView.updateProgress(nPercent, label);
 		}
 	}
-		
+	
+	/**
+	 * @brief set download complete flag
+	 * @details set download complete flag
+	 * @param download complete flag
+	 */
+	public void setDownComplete(boolean downComplete) {
+		m_downComplete = downComplete; 
+	}
+	
+	/**
+	 * @brief get download complete flag
+	 * @details get download complete flag
+	 * @param download complete flag
+	 */
+	public boolean getDownComplete() {
+		return m_downComplete; 
+	}
 	
 	/**
 	 * @brief add log
@@ -283,15 +341,29 @@ public class SV40EDUCController {
 		addLog("completed download");
 		// unzip file
 		try {
-			addLog("starting unzip");			
+			String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
+			addLog("starting unzip - " + fileName);			
 			String destDir = unzip(zipFilePath, jsonFile);
 			addLog("Ready to use ENC");
+			
+			// S-101
 			SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
 			String pathOfCatalog = destDir+"\\"+s_nameOfCatalog;
-			report.updateReportFromCatalog(pathOfCatalog);
+
+			// 압축해제후 1초 지연처리(catalog 접근 오류)
+			Thread.sleep(1000);
+			
+			// S-101 카탈로그가 있으면 기록
+			File f = new File(pathOfCatalog);
+			if (f.isFile()) {
+				report.updateReportFromCatalog(pathOfCatalog);
+			}
+			
 			report.updateReportFromENCUpdateFile(jsonFile);
 			report.save();
 			updateProgress(0, "Ready to use");
+			
+			//m_downComplete = true;			
 		} catch (Exception e) {
 			int pos = zipFilePath.lastIndexOf('\\');
 			String file = zipFilePath.substring(pos+1);
@@ -312,8 +384,10 @@ public class SV40EDUCController {
 	 */		
 	public String unzip(String zipFilePath,JsonObject jsonFile) throws Exception {
 		JsonObject jsonConfig = getConfig();
+		String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
 		String destDirectory = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.path") +"\\"+
-				SV40EDUUtil.queryJsonValueToString(jsonFile, "destPath");
+				fileName.substring(0, fileName.lastIndexOf(".")-1);
+				//SV40EDUUtil.queryJsonValueToString(jsonFile, "destPath");
 		
 		UnzipParameters param = new UnzipParameters();
 		param.setIgnoreAllFileAttributes(true);
@@ -367,7 +441,10 @@ public class SV40EDUCController {
 			}
 		}
 		
-		return destDirectory;
+		String extractDirectory = destDirectory+"\\ENC_ROOT";  
+		File file = new File(extractDirectory);
+		return (file.isDirectory())? extractDirectory:destDirectory;  
+		//return destDirectory;
 	}	
 	
 	/**
@@ -376,6 +453,9 @@ public class SV40EDUCController {
 	 * @param message message to log
 	 */			
 	public void startDownload(JsonObject jsonMessage) {
+		//m_downComplete = false;
+		setDownComplete(false);
+		
 		SV40EDUCController controller = this;
 		
 		m_taskDownload.setTask(new TaskManager.Task() {
@@ -386,7 +466,6 @@ public class SV40EDUCController {
 		
 		});
 		m_taskDownload.start();
-		
 	}
 	/**
 	 * @brief start maritime cloud client
@@ -438,12 +517,13 @@ public class SV40EDUCController {
 		String message = jsonResponse.get("message").getAsString();
 		
 		if (result.equals("error")) {
-			addLog("Update Error" + message);
+			addLog("Update Error " + message);
 			return;
 		}
 		
 		if (!result.equals("ok")) {
-			addLog("Update Error : Unknown");
+			addLog("Update Error " + message);
+			//addLog("Update Error : Unknown");
 			return;
 		}
 		
@@ -455,9 +535,29 @@ public class SV40EDUCController {
 			return;
 		}
 		
-		// start to download
-		for (int i=0; i<nSizePackages; i++) {
-			startDownload((JsonObject)jsonPackages.get(i));
-		}
+		Object[] options = { "Yes", "No" };
+	    int response = JOptionPane.showOptionDialog(null,
+	            "There is a new package. Would you like to download it?", "Notification",
+	            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+	            options, options[1]);
+	    
+	    // 다운로드 여부 선택
+	    if (response != JOptionPane.OK_OPTION) {
+	    	addLog("ENC download cancel");
+	    } else {
+			// start to download
+			for (int i=0; i<nSizePackages; i++) {
+				startDownload((JsonObject)jsonPackages.get(i));
+				
+				// download complete wait
+				try {
+					//while (m_downComplete == false) {
+					while (getDownComplete() == false) {
+						Thread.sleep(1000);
+					}
+				} catch (InterruptedException ie) {				
+				}			
+			}
+	    }
 	}		
 }
