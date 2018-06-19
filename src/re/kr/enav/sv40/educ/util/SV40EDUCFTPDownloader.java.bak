@@ -34,7 +34,6 @@ public class SV40EDUCFTPDownloader extends Thread {
 	protected SV40EDUCController m_controller;
 	protected String m_strSrcUrl;
 	protected String m_strDestFilePath;
-	protected String m_strMD5Hash;
 	protected JsonObject m_jsonFile;
 	protected JsonObject m_jsonConfig;
 	protected URL m_url = null;
@@ -46,10 +45,6 @@ public class SV40EDUCFTPDownloader extends Thread {
 		m_jsonFile = jsonFile;
 		m_jsonConfig = controller.getConfig(); 
 		m_strSrcUrl = m_jsonFile.get("url").getAsString();
-		if (m_jsonFile.get("md5") == null)
-			m_strMD5Hash = "";
-		else
-			m_strMD5Hash = m_jsonFile.get("md5").getAsString();
 		
 		try {
 			m_url = new URL(m_strSrcUrl);
@@ -74,7 +69,7 @@ public class SV40EDUCFTPDownloader extends Thread {
 		if (m_url == null) return;
 		
 		try {
-			nRet = download(m_strSrcUrl, m_strDestFilePath, m_strMD5Hash);
+			nRet = download(m_strSrcUrl, m_strDestFilePath);
 			if (nRet > 0) {
 				m_controller.completeDownload(m_strDestFilePath, m_jsonFile);
 				m_controller.setDownComplete(true);
@@ -95,7 +90,7 @@ public class SV40EDUCFTPDownloader extends Thread {
 	 * @param destFilePath file destination to save
 	 * @return if file not found -1, download completed return size of file, if need more download try return 0.
 	 */			
-	private long download(String srcUrl, String destFilePath, String strMD5Hash) throws Exception {
+	private long download(String srcUrl, String destFilePath) throws Exception {
 		long lRet = 0;
 		long fileSize = 0, remains, lengthOfFile = 0;
 		int errorCode = 0;
@@ -132,12 +127,12 @@ public class SV40EDUCFTPDownloader extends Thread {
 				errorCode = 2;
 			}
 		}
-
+		if (lRet != -1) {
+			ftp.connect(m_url.getHost(), m_url.getPort());
+			ftp.login(FTP_USER_ID, FTP_USER_PASSWORD);
+		}
 		if (lRet > -1) {
 			try {
-				ftp.connect(m_url.getHost(), m_url.getPort());
-				ftp.login(FTP_USER_ID, FTP_USER_PASSWORD);
-
 				FTPFile[] remoteFiles = ftp.listFiles(fileName);
 				FTPFile remoteFile = remoteFiles[0];
 				remains = remoteFile.getSize();
@@ -199,17 +194,6 @@ public class SV40EDUCFTPDownloader extends Thread {
 				msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_006, "File");
 			m_controller.addLog(msg);			
 			throw new Exception();
-		} else {
-			
-			// 파일 유효성 확인
-			if (strMD5Hash != "") {
-				String curMD5Hash = SV40EDUUtil.getMD5(destFilePath);
-				if (!strMD5Hash.equals(curMD5Hash)) {
-					String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_007, "File");
-					m_controller.addLog(msg);			
-					throw new Exception();
-				}
-			}
 		}
 		
 		return lRet;
