@@ -53,6 +53,7 @@ public class SV40EDUCController {
 	public final static String s_pathOfConfig = "Res\\config.json";
 	public final static String s_defaultPathOfConfig = "Res\\default.json";
 	public final static String s_pathOfReport = "Res\\report.json";
+	public final static String s_pathOfZone = "Res\\zone.json";
 	public final static String s_nameOfCatalog = "S101ed1.CAT";
 	
 	public JsonObject m_jsonConfig;	/**< store configuration */		
@@ -265,6 +266,46 @@ public class SV40EDUCController {
 		
 		return bRet;
 	}
+	
+	/**
+	 * @brief request latest ER download
+	 * @details request latest ER download
+	 */		
+	public boolean requestDownloadZone() {
+		boolean bRet = true;
+
+		// 내부네트웍 확인
+		if (SV40EDUUtil.LOCALNETWORK_STATE == false) {
+			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
+			addLog(msg);
+			return false;
+		}
+		
+		JsonObject jsonConfig = getConfig();
+		
+		JsonObject jsonRequest = new JsonObject();
+		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
+		
+		
+//		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
+//		JsonObject jsonReport = report.toJson();
+//		
+//		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
+//		jsonRequest.add("zones", jsonUserZones);
+		JsonObject jsonRequestFull = new JsonObject();
+		
+		JsonArray testArrayJson = new JsonArray();
+		JsonObject MSG = new JsonObject();
+		MSG.addProperty("message", jsonRequest.toString());
+		testArrayJson.add(MSG);
+		jsonRequestFull.add("EncZoneReq", testArrayJson);
+		
+		addLog("Requested zone info.");
+		m_mcClient.sendMessage(jsonRequestFull.toString());
+		
+		return bRet;
+	}
+	
 	/**
 	 * @brief request latest ER download
 	 * @details request latest ER download
@@ -559,5 +600,35 @@ public class SV40EDUCController {
 				}			
 			}
 	    }
-	}		
+	}
+	
+	public void processEncZoneReceive(JsonObject jsonResponse) {
+		addLog("Received zone items "+ jsonResponse.size());
+		String result = jsonResponse.get("result").getAsString();
+		String message = jsonResponse.get("message").getAsString();
+		
+		if (result.equals("error")) {
+			addLog("Zone Error " + message);
+			return;
+		}
+		
+		if (!result.equals("ok")) {
+			addLog("Zone Error " + message);
+			return;
+		}
+		
+		// get to zone 
+		JsonArray jsonZones = jsonResponse.get("zones").getAsJsonArray();
+		int nSizeZones = jsonZones.size();
+		if (nSizeZones == 0) {
+			addLog("ZONE not found");
+			return;
+		}
+
+		jsonResponse.remove("result");
+		jsonResponse.remove("message");
+		
+		SV40EDUUtil.writeJson(jsonResponse, s_pathOfZone);
+		addLog("Received zone done");
+	}
 }

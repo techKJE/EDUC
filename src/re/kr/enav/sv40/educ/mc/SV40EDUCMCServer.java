@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import kr.ac.kaist.mms_client.MMSClientHandler;
@@ -120,6 +121,17 @@ public class SV40EDUCMCServer {
 		JsonParser parser = new JsonParser();
 		//JsonObject jsonRequest = (JsonObject)parser.parse(message);
 		JsonObject jsonObj = (JsonObject)parser.parse(message);
+	
+		JsonElement elZone = jsonObj.get("EncZoneReq");
+		if (elZone != null) {
+			try {
+					response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"response_zone.json")));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			return response;
+		}
 		
 		JsonArray jsonReq = jsonObj.get("EncReq").getAsJsonArray();
 		JsonObject jsonMsg = jsonReq.get(0).getAsJsonObject();

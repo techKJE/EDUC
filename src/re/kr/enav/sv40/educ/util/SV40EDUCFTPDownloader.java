@@ -27,6 +27,9 @@ public class SV40EDUCFTPDownloader extends Thread {
 	static final public int MAX_COUNT_TRYDOWNLOAD = 10;
 	static final public String FTP_USER_ID = "ftpUser"/*"enavi"*/;
 	static final public String FTP_USER_PASSWORD = "ftpUser"/*"enavi"*/;
+	
+//	static final public String FTP_USER_ID = "rivo"/*"enavi"*/;
+//	static final public String FTP_USER_PASSWORD = "kjeng"/*"enavi"*/;
 
 	protected int m_nReadTimeout = 30000;		/**< milliseconds time outs to download */
 	protected int m_nUnitSizeOfSave = 1024;		/**< unit size of download request, file recorded as unit */

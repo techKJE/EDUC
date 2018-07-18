@@ -50,6 +50,7 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	
 	private static String s_MENU_DNEN = "Download EN";
 	private static String s_MENU_DNER = "Download ER";
+	private static String s_MENU_ZONE = "Download ZONE";
 	
 	private static String s_MENU_CLEARLOG = "Clear Log";
 	private static String s_MENU_CONFIG = "Config";
@@ -106,6 +107,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 			m_controller.requestDownloadEN();
 		} else if (command.equals(s_MENU_DNER)) {
 			m_controller.requestDownloadER();
+		} else if (command.equals(s_MENU_ZONE)) {
+			m_controller.requestDownloadZone();	
 		} else if (command.equals(s_MENU_CLEARLOG)) {
 			clearLog();
 		} else if (command.equals(s_MENU_CONFIG)) {
@@ -161,6 +164,12 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 		menuItem = new JMenuItem(s_MENU_DNER);
 		menuItem.getAccessibleContext().setAccessibleDescription(
 		        "download ER ENC from eNavi center");
+		menuItem.addActionListener(this);
+		menu.add(menuItem);
+		
+		menuItem = new JMenuItem(s_MENU_ZONE);
+		menuItem.getAccessibleContext().setAccessibleDescription(
+		        "download ZONE INFO from eNavi center");
 		menuItem.addActionListener(this);
 		menu.add(menuItem);
 		

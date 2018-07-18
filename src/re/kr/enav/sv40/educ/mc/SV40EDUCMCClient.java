@@ -20,6 +20,7 @@ import java.util.TimerTask;
 import java.net.ConnectException;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -187,24 +188,39 @@ public class SV40EDUCMCClient extends Thread{
 					try {
 						/* response from MCC
 						 * {
-						 *		"SV40ENCUpdate": [{          
-						 *			"message": "{ ......}"
+						 *		"EncUpdate": [{          
+						 *			"message": "{......}"
 						 *		}]
-						 *	}
-						 * 
+						 * }
+						 * {
+						 * 		"EncZoneRes":[{
+						 * 			"message": "{......}"
+						 * 		}]
+						 * }
 						 */
 						JsonObject jsonResponse = (JsonObject)parser.parse(message);
-						//JsonArray jsonTopic = jsonResponse.get("SV40ENCUpdate").getAsJsonArray();
-						JsonArray jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+						
+						JsonArray jsonTopic;
+						JsonElement elZone = jsonResponse.get("EncZoneRes");
+						if (elZone != null) 
+							jsonTopic = jsonResponse.get("EncZoneRes").getAsJsonArray();
+						else 
+							jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+						
 						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
 						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
-						//String strMessage = jsonMessage.get("message").getAsString();
-						JsonArray packageObj = jsonMessage2.get("packages").getAsJsonArray();
-						//JsonObject url = packageObj.get(0).getAsJsonObject();
-						//jsonResponse =  (JsonObject)parser.parse(strMessage);
 						
-						//m_controller.processMCMessageReceive(jsonResponse);
-						m_controller.processMCMessageReceive(jsonMessage2);
+						if (elZone != null)
+							m_controller.processEncZoneReceive(jsonMessage2);
+						else
+							m_controller.processMCMessageReceive(jsonMessage2);
+						
+						
+//						JsonArray jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+//						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
+//						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
+//						JsonArray packageObj = jsonMessage2.get("packages").getAsJsonArray();
+//						m_controller.processMCMessageReceive(jsonMessage2);
 					} catch (Exception e) {
 						m_controller.addLog("Receiver failed to parse message from EDUS:"+message);
 					}
