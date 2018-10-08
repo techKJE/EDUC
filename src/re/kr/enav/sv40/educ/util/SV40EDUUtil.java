@@ -247,4 +247,25 @@ public class SV40EDUUtil {
 		
 		return sb.toString();
 	}
+	
+	static public String getZoneVer(JsonObject jsonEncZone, String zone) {
+		String ver="";
+		
+		if (!jsonEncZone.has("zones")) {
+			return ver;
+		}
+		
+		JsonArray jsonZones = jsonEncZone.get("zones").getAsJsonArray();
+		for (int i=0;i<jsonZones.size(); i++) {
+			JsonObject jsonZone = jsonZones.get(i).getAsJsonObject();
+			String localZone = jsonZone.get("name").getAsString();
+			
+			if (zone.equals(localZone)) {
+				ver = jsonZone.get("ver").getAsString();
+				break;
+			}
+		}
+	
+		return ver;
+	}
 }

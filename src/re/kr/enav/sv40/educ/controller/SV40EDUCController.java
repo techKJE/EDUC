@@ -56,7 +56,8 @@ public class SV40EDUCController {
 	public final static String s_pathOfZone = "Res\\zone.json";
 	public final static String s_nameOfCatalog = "S101ed1.CAT";
 	
-	public JsonObject m_jsonConfig;	/**< store configuration */		
+	public JsonObject m_jsonConfig;	/**< store configuration */	
+	public JsonObject m_jsonZone;
 	public LocalNetworkState m_local;
 	
 	public void setCallbackProgress(CallbackView callback) {
@@ -83,12 +84,29 @@ public class SV40EDUCController {
 			return;
 		}
 		
+		m_jsonZone = loadZone();
+		if (m_jsonZone == null) {
+			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "zone");
+			JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.INFORMATION_MESSAGE);
+		}
+		
 		startMCClient();
 		startLocalNetwork();
 	}	
 	public JsonObject getConfig() {
 		return m_jsonConfig;
 	}
+	
+	public JsonObject loadZone() {
+		JsonObject json = null;
+		try {
+			json = readConfig(s_pathOfZone);
+		} catch (Exception e) {
+		}
+		
+		return json;
+	}
+	
 	/**
 	 * @brief read configuration
 	 * @details read json file and return configuration json object
@@ -187,25 +205,43 @@ public class SV40EDUCController {
 		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
 		
 		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
-		JsonObject jsonLocalZone = report.getZone(localZone);
+		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
+		
+		// basezones + updatezones
+		JsonObject jsonLocalZone = report.getBaseZone(localZone);
 		if (jsonLocalZone == null) {
 			JsonObject zone = new JsonObject();
 			zone.addProperty("zone", localZone);
+			zone.addProperty("zonever", zonever);
 			zone.addProperty("version", "");
 			zone.addProperty("releaseDate", "");
 			zones.add(zone);
 		} else {
 			zones.add(jsonLocalZone);
 		}
-		jsonRequest.add("zones", zones);
+		jsonRequest.add("basezones", zones);
 		
+		JsonArray uzones = new JsonArray();
+		jsonLocalZone = report.getUpdateZone(localZone);
+		if (jsonLocalZone == null) {
+			JsonObject zone = new JsonObject();
+			zone.addProperty("zone", localZone);
+			zone.addProperty("zonever", zonever);
+			zone.addProperty("version", "");
+			zone.addProperty("releaseDate", "");
+			uzones.add(zone);
+		} else {
+			uzones.add(jsonLocalZone);
+		}
+		jsonRequest.add("updatezones", uzones);
 		
 		JsonObject jsonRequestFull = new JsonObject();
 	
 		//MSG.addProperty("message", "1234");
 		JsonArray testArrayJson = new JsonArray();
 		JsonObject MSG = new JsonObject();
-		MSG.addProperty("message", jsonRequest.toString());
+		//MSG.addProperty("message", jsonRequest.toString());
+		MSG.add("message", jsonRequest);
 		testArrayJson.add(MSG);
 		jsonRequestFull.add("EncReq", testArrayJson);
 		
@@ -250,13 +286,45 @@ public class SV40EDUCController {
 //		jsonReport.add("encs", null);
 //		jsonRequest.add("report", jsonReport);
 		
-		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
-		jsonRequest.add("zones", jsonUserZones);
+		JsonArray zones = new JsonArray();
+		
+		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
+		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
+		
+		// base가 없는 경우
+		JsonObject jsonLocalZone = report.getBaseZone(localZone);
+		if (jsonLocalZone == null) {
+			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "EN");
+			addLog(msg);
+			return false;
+		} else {
+			zones.add(jsonLocalZone);
+		}
+		jsonRequest.add("basezones", zones);
+		
+		JsonArray uzones = new JsonArray();
+		jsonLocalZone = report.getUpdateZone(localZone);
+		if (jsonLocalZone == null) {
+			JsonObject zone = new JsonObject();
+			zone.addProperty("zone", localZone);
+			zone.addProperty("zonever", zonever);
+			zone.addProperty("version", "");
+			zone.addProperty("releaseDate", "");
+			uzones.add(zone);
+		} else {
+			uzones.add(jsonLocalZone);
+		}
+		jsonRequest.add("updatezones", uzones);
+		
+//		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
+//		jsonRequest.add("zones", jsonUserZones);
+		
 		JsonObject jsonRequestFull = new JsonObject();
 		
 		JsonArray testArrayJson = new JsonArray();
 		JsonObject MSG = new JsonObject();
-		MSG.addProperty("message", jsonRequest.toString());
+		//MSG.addProperty("message", jsonRequest.toString());
+		MSG.add("message", jsonRequest);
 		testArrayJson.add(MSG);
 		jsonRequestFull.add("EncReq", testArrayJson);
 		
@@ -389,16 +457,16 @@ public class SV40EDUCController {
 			
 			// S-101
 			SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
-			String pathOfCatalog = destDir+"\\"+s_nameOfCatalog;
+//			String pathOfCatalog = destDir+"\\"+s_nameOfCatalog;
 
 			// 압축해제후 1초 지연처리(catalog 접근 오류)
 			Thread.sleep(1000);
 			
-			// S-101 카탈로그가 있으면 기록
-			File f = new File(pathOfCatalog);
-			if (f.isFile()) {
-				report.updateReportFromCatalog(pathOfCatalog);
-			}
+//			// S-101 카탈로그가 있으면 기록
+//			File f = new File(pathOfCatalog);
+//			if (f.isFile()) {
+//				report.updateReportFromCatalog(pathOfCatalog);
+//			}
 			
 			report.updateReportFromENCUpdateFile(jsonFile);
 			report.save();
@@ -630,5 +698,12 @@ public class SV40EDUCController {
 		
 		SV40EDUUtil.writeJson(jsonResponse, s_pathOfZone);
 		addLog("Received zone done");
+		
+		// load zone
+		m_jsonZone = loadZone();
+		if (m_jsonZone == null) {
+			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "ZONE");
+			JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 }

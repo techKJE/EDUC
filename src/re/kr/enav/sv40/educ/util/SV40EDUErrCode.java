@@ -7,7 +7,8 @@ public enum SV40EDUErrCode implements SV40EDUErrCodable {
 	ERR_004("ERR_004","%1는 필수입력요소입니다."),
 	ERR_005("ERR_005","%1는 zip파일형식이 아닙니다"),
 	ERR_006("ERR_006","%1에 접근할 수 없습니다. (e-Nav센터에 문의)"),
-	ERR_007("ERR_007","%1이 정상적으로 다운로드 되지 않았습니다.");
+	ERR_007("ERR_007","%1이 정상적으로 다운로드 되지 않았습니다."),
+	ERR_008("ERR_008","%1을(를) 다운받으시길 바랍니다.");
 	
 	private String errCode;
 	private String errMsg;

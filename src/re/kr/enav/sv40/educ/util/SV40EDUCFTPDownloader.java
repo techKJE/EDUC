@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPConnectionClosedException;
 import org.apache.commons.net.ftp.FTPFile;
@@ -139,8 +140,22 @@ public class SV40EDUCFTPDownloader extends Thread {
 		if (lRet > -1) {
 			try {
 				ftp.connect(m_url.getHost(), m_url.getPort());
-				ftp.login(FTP_USER_ID, FTP_USER_PASSWORD);
-
+//				int conRep = ftp.getReplyCode();
+//				if (FTPReply.isPositiveCompletion(conRep)) {
+//					lRet = -1;
+//				    ftp.disconnect();
+//				    return lRet;
+//				}
+				
+				boolean isLogin = ftp.login(FTP_USER_ID, FTP_USER_PASSWORD);
+				if (isLogin == false) {
+					lRet = -1;
+				    ftp.disconnect();
+				    return lRet;
+				}
+				
+				ftp.enterLocalPassiveMode();
+				
 				FTPFile[] remoteFiles = ftp.listFiles(fileName);
 				FTPFile remoteFile = remoteFiles[0];
 				remains = remoteFile.getSize();

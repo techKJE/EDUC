@@ -125,7 +125,7 @@ public class SV40EDUCMCServer {
 		JsonElement elZone = jsonObj.get("EncZoneReq");
 		if (elZone != null) {
 			try {
-					response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"response_zone.json")));
+				response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"response_zone.json")));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -135,14 +135,16 @@ public class SV40EDUCMCServer {
 		
 		JsonArray jsonReq = jsonObj.get("EncReq").getAsJsonArray();
 		JsonObject jsonMsg = jsonReq.get(0).getAsJsonObject();
-		JsonObject jsonRequest = (JsonObject)parser.parse(jsonMsg.get("message").getAsString());
+		//JsonObject jsonRequest = (JsonObject)parser.parse(jsonMsg.get("message").getAsString());
+		JsonObject jsonRequest = (JsonObject)jsonMsg.get("message");
 		
 		String license = SV40EDUUtil.queryJsonValueToString(jsonRequest, "license");
 		String category = SV40EDUUtil.queryJsonValueToString(jsonRequest, "category");
 		String latitude = SV40EDUUtil.queryJsonValueToString(jsonRequest, "latitude");
 		String longitude = SV40EDUUtil.queryJsonValueToString(jsonRequest, "longitude");
-		// zone 정보가 배열로 입력되지만, 목업이기에 값 유효성만 확인 하고.. 준비된 것을 돌려준다. 
-		String zones[] = SV40EDUUtil.queryJsonValueToString(jsonRequest, "zone").split(",");
+
+		// zone 정보가 배열로 입력되지만, 목업이기에 값 유효성만 확인 하고.. 준비된 것을 돌려준다.
+		String zones[] = SV40EDUUtil.queryJsonValueToString(jsonRequest, "basezone").split(",");
 		
 		// 입력 데이타  validation check
 		if (license.isEmpty() || latitude.isEmpty() || longitude.isEmpty() || zones.length == 0) {
@@ -165,7 +167,8 @@ public class SV40EDUCMCServer {
 		try {
 			if (category.equals("EN")) {
 				//response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_en_ftp_sample.json")));
-				String returnFile = "Res"+File.separator+"download_en_ftp_sample.json";
+				//String returnFile = "Res"+File.separator+"download_en_ftp_sample.json";
+				String returnFile = "Res"+File.separator+"download_en_sample.json";
 				JsonObject jsonLocal = null;
 				try {
 					jsonLocal = (JsonObject)parser.parse(new String(Files.readAllBytes(Paths.get(returnFile))));
@@ -174,7 +177,7 @@ public class SV40EDUCMCServer {
 					return new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_parser_error.json")));
 				}
 				
-				JsonArray jsonUserZones = jsonRequest.get("zones").getAsJsonArray();
+				JsonArray jsonUserZones = jsonRequest.get("basezones").getAsJsonArray();
 				
 				JsonArray jsonTopic = jsonLocal.get("EncUpdate").getAsJsonArray();
 				JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
@@ -202,7 +205,8 @@ public class SV40EDUCMCServer {
 				}
 			} 
 			else if (category.equals("ER")) {
-				String returnFile = "Res"+File.separator+"download_er_ftp_sample.json";
+				//String returnFile = "Res"+File.separator+"download_er_ftp_sample.json";
+				String returnFile = "Res"+File.separator+"download_er_sample.json";
 				JsonObject jsonLocal = null;
 				try {
 					jsonLocal = (JsonObject)parser.parse(new String(Files.readAllBytes(Paths.get(returnFile))));
@@ -211,9 +215,7 @@ public class SV40EDUCMCServer {
 					return new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_parser_error.json")));
 				}
 				
-//				JsonObject jsonUserReport = jsonRequest.get("report").getAsJsonObject();
-//				JsonArray jsonUserZones = jsonUserReport.get("zones").getAsJsonArray();
-				JsonArray jsonUserZones = jsonRequest.get("zones").getAsJsonArray();
+				JsonArray jsonUserZones = jsonRequest.get("updatezones").getAsJsonArray();
 				
 				JsonArray jsonTopic = jsonLocal.get("EncUpdate").getAsJsonArray();
 				JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();

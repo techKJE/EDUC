@@ -88,13 +88,34 @@ public class SV40S101UpdateStatusReport {
 		}
 	}
 	
-	public JsonObject getZone(String zone) {
+	public JsonObject getUpdateZone(String zone) {
 		JsonObject jsonTargetZone = null;
 		
-		if (!m_jsonReport.has("zones")) {
+		if (!m_jsonReport.has("updatezones")) {
 			return jsonTargetZone;
 		}
-		JsonArray jsonZones = m_jsonReport.get("zones").getAsJsonArray();
+		JsonArray jsonZones = m_jsonReport.get("updatezones").getAsJsonArray();
+		for (int i=0;i<jsonZones.size(); i++) {
+			JsonObject jsonZone = jsonZones.get(i).getAsJsonObject();
+			String localZone = jsonZone.get("zone").getAsString();
+			
+			if (zone.equals(localZone)) {
+				jsonTargetZone = jsonZone;
+				break;
+			}
+		}
+	
+		return jsonTargetZone;
+	}
+	
+	//
+	public JsonObject getBaseZone(String zone) {
+		JsonObject jsonTargetZone = null;
+		
+		if (!m_jsonReport.has("basezones")) {
+			return jsonTargetZone;
+		}
+		JsonArray jsonZones = m_jsonReport.get("basezones").getAsJsonArray();
 		for (int i=0;i<jsonZones.size(); i++) {
 			JsonObject jsonZone = jsonZones.get(i).getAsJsonObject();
 			String localZone = jsonZone.get("zone").getAsString();
@@ -117,10 +138,22 @@ public class SV40S101UpdateStatusReport {
 	public boolean updateReportFromENCUpdateFile(JsonObject jsonENCUpdateFile) {
 		boolean bRet = true;
 		
-		if (!m_jsonReport.has("zones")) {
-			m_jsonReport.add("zones",  new JsonArray());
+		if (!m_jsonReport.has("basezones")) {
+			m_jsonReport.add("basezones",  new JsonArray());
 		}
-		JsonArray jsonZones = m_jsonReport.get("zones").getAsJsonArray();
+		
+		if (!m_jsonReport.has("updatezones")) {
+			m_jsonReport.add("updatezones",  new JsonArray());
+		}
+
+		JsonArray jsonZones;
+		
+		String fileCategory = jsonENCUpdateFile.get("fileCategory").getAsString();
+		if (fileCategory.equals("EN"))
+			jsonZones = m_jsonReport.get("basezones").getAsJsonArray();
+		else
+			jsonZones = m_jsonReport.get("updatezones").getAsJsonArray();
+		
 		String fileZone = jsonENCUpdateFile.get("zone").getAsString();
 		String fileVersion = jsonENCUpdateFile.get("version").getAsString();
 		String fileReleaseDate = jsonENCUpdateFile.get("releaseDate").getAsString();
