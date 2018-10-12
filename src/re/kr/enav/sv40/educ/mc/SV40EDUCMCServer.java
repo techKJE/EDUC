@@ -135,8 +135,7 @@ public class SV40EDUCMCServer {
 		
 		JsonArray jsonReq = jsonObj.get("EncReq").getAsJsonArray();
 		JsonObject jsonMsg = jsonReq.get(0).getAsJsonObject();
-		//JsonObject jsonRequest = (JsonObject)parser.parse(jsonMsg.get("message").getAsString());
-		JsonObject jsonRequest = (JsonObject)jsonMsg.get("message");
+		JsonObject jsonRequest = (JsonObject)parser.parse(jsonMsg.get("message").getAsString());
 		
 		String license = SV40EDUUtil.queryJsonValueToString(jsonRequest, "license");
 		String category = SV40EDUUtil.queryJsonValueToString(jsonRequest, "category");

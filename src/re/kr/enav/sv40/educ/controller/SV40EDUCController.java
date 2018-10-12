@@ -240,8 +240,7 @@ public class SV40EDUCController {
 		//MSG.addProperty("message", "1234");
 		JsonArray testArrayJson = new JsonArray();
 		JsonObject MSG = new JsonObject();
-		//MSG.addProperty("message", jsonRequest.toString());
-		MSG.add("message", jsonRequest);
+		MSG.addProperty("message", jsonRequest.toString());
 		testArrayJson.add(MSG);
 		jsonRequestFull.add("EncReq", testArrayJson);
 		
