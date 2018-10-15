@@ -151,7 +151,9 @@ public class SV40EDUCFTPDownloader extends Thread {
 				if (isLogin == false) {
 					lRet = -1;
 				    ftp.disconnect();
-				    return lRet;
+				    String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "FileServer");
+				    m_controller.addLog(msg);
+					return lRet;
 				}
 				
 				ftp.enterLocalPassiveMode();

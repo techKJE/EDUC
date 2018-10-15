@@ -171,6 +171,7 @@ public class SV40EDUCController {
 		}
 		return json;
 	}
+	
 	/**
 	 * @brief request latest base enc (EN) download
 	 * @details request latest base enc (EN) download
@@ -189,7 +190,6 @@ public class SV40EDUCController {
 		
 		JsonObject jsonRequest = new JsonObject();
 		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		//jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
 		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
 		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
 		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
@@ -322,8 +322,7 @@ public class SV40EDUCController {
 		
 		JsonArray testArrayJson = new JsonArray();
 		JsonObject MSG = new JsonObject();
-		//MSG.addProperty("message", jsonRequest.toString());
-		MSG.add("message", jsonRequest);
+		MSG.addProperty("message", jsonRequest.toString());
 		testArrayJson.add(MSG);
 		jsonRequestFull.add("EncReq", testArrayJson);
 		

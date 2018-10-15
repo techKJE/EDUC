@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.net.ConnectException;
-
+import java.io.IOException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -115,8 +115,11 @@ public class SV40EDUCMCClient extends Thread{
 			TimerTask task = new TimerTask() {
 				@Override
 				public void run() {
-					if (m_retryCnt >= SV40EDUUtil.RETRY_MAXCOUNT)
+					if (m_retryCnt >= SV40EDUUtil.RETRY_MAXCOUNT) {
 						timer.cancel();
+						String msg = "잠시 후 다시 시도해 주시기 바랍니다.";
+						m_controller.addLog(msg);
+					}
 					else
 					{
 						try {
@@ -124,6 +127,9 @@ public class SV40EDUCMCClient extends Thread{
 							timer.cancel();
 						} catch (ConnectException ce) {
 							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "MMSServer");
+							m_controller.addLog(msg);
+						} catch (IOException ie) {
+							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, m_strDestServiceMRN);
 							m_controller.addLog(msg);
 						} catch (Exception e) {
 							e.printStackTrace();

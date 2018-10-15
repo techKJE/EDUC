@@ -185,18 +185,27 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		
 		if (lRet != -1) {
 			try {
+				srcUrl = srcUrl.replaceAll(" ", "%20");
 				url = new URL(srcUrl);
 				conn = (HttpURLConnection)url.openConnection();
+				//conn = url.openConnection();
+
+//				int code = conn.getResponseCode();
+//				String msg = String.format("response code: %d", code);
+//				m_controller.addLog(msg);
+
 				conn.setRequestProperty("Range", "bytes=" + String.valueOf(fileSize) + '-');
 				conn.connect();
 			} catch (SocketException se) {
 				// connect fail
 				errorCode = 3;
 				lRet = -2;
+				conn.disconnect();
 			} catch (Exception e) {
 				// file not found or failure
 				lRet = -1;
 				errorCode = 4;
+				conn.disconnect();
 			}
 		}
 		

@@ -109,6 +109,16 @@ public class SV40S101UpdateStatusReport {
 	}
 	
 	//
+	public JsonArray getUpdateZones() {
+		JsonArray jsonZones = null;
+		
+		if (m_jsonReport.has("updatezones"))
+			jsonZones = m_jsonReport.get("updatezones").getAsJsonArray();
+	
+		return jsonZones;
+	}
+	
+	//
 	public JsonObject getBaseZone(String zone) {
 		JsonObject jsonTargetZone = null;
 		
@@ -127,6 +137,16 @@ public class SV40S101UpdateStatusReport {
 		}
 	
 		return jsonTargetZone;
+	}
+	
+	//
+	public JsonArray getBaseZones() {
+		JsonArray jsonZones = null;
+		
+		if (m_jsonReport.has("basezones"))
+			jsonZones = m_jsonReport.get("basezones").getAsJsonArray();
+	
+		return jsonZones;
 	}
 	
 	/**
