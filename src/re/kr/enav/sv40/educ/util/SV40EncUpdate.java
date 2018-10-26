@@ -100,8 +100,13 @@ public class SV40EncUpdate {
 				jsonPackage.addProperty("zone", zoneName);
 				jsonPackage.addProperty("zonever", zoneVersion);
 				jsonPackage.addProperty("encType", typeOfENC);
-				jsonPackage.addProperty("fileCategory", zoneName);
-				jsonPackage.addProperty("category", categoryOfENC.equals("update collection")? "ER":"EN");
+				
+				// base collection => EN, update collection => ER
+				if (categoryOfENC.equals("base collection") || categoryOfENC.equals(""))
+					categoryOfENC = "EN";
+				else if (categoryOfENC.equals("update collection"))
+					categoryOfENC = "ER";
+				jsonPackage.addProperty("fileCategory", categoryOfENC);
 				jsonPackage.addProperty("fileName", fileName);
 				jsonPackage.addProperty("fileSize", Integer.parseInt(fileSize));
 				jsonPackage.addProperty("destPath", "");
