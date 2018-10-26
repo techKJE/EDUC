@@ -11,11 +11,12 @@ Modifier :
 package re.kr.enav.sv40.educ.controller;
 
 import java.io.File;
+
 import javax.swing.JOptionPane;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import kr.ac.kaist.mms_client.MMSClientHandler;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.progress.ProgressMonitor;
@@ -24,10 +25,12 @@ import re.kr.enav.sv40.educ.util.LocalNetworkState;
 import re.kr.enav.sv40.educ.util.SV40EDUCDownloader;
 import re.kr.enav.sv40.educ.util.SV40EDUCHTTPDownloader;
 import re.kr.enav.sv40.educ.util.SV40EDUErrCode;
+import re.kr.enav.sv40.educ.util.SV40EDUErrMessage;
 import re.kr.enav.sv40.educ.util.SV40EDUUtil;
+import re.kr.enav.sv40.educ.util.SV40EncReq;
+import re.kr.enav.sv40.educ.util.SV40EncZoneReq;
 import re.kr.enav.sv40.educ.util.SV40S101UpdateStatusReport;
 import re.kr.enav.sv40.educ.util.TaskManager;
-import re.kr.enav.sv40.educ.util.SV40EDUErrMessage;
 
 /**
  * @brief View UI와 전자해도 다운로드 서비스를 제어관리하는 컨트롤러 클래스
@@ -187,67 +190,67 @@ public class SV40EDUCController {
 		}
 		
 		JsonObject jsonConfig = getConfig();
-		
-		JsonObject jsonRequest = new JsonObject();
-		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
-		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
-		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
-		jsonRequest.addProperty("latitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lat"));
-		jsonRequest.addProperty("longitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lon"));
-		
-		jsonRequest.addProperty("category", "EN");
-		
-		JsonArray zones = new JsonArray();
-		
-		//JsonObject zone = new JsonObject();
-		//zone.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
 		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
-		
-		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
-		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
-		
-		// basezones + updatezones
-		JsonObject jsonLocalZone = report.getBaseZone(localZone);
-		if (jsonLocalZone == null) {
-			JsonObject zone = new JsonObject();
-			zone.addProperty("zone", localZone);
-			zone.addProperty("zonever", zonever);
-			zone.addProperty("version", "");
-			zone.addProperty("releaseDate", "");
-			zones.add(zone);
-		} else {
-			zones.add(jsonLocalZone);
-		}
-		jsonRequest.add("basezones", zones);
-		
-		JsonArray uzones = new JsonArray();
-		jsonLocalZone = report.getUpdateZone(localZone);
-		if (jsonLocalZone == null) {
-			JsonObject zone = new JsonObject();
-			zone.addProperty("zone", localZone);
-			zone.addProperty("zonever", zonever);
-			zone.addProperty("version", "");
-			zone.addProperty("releaseDate", "");
-			uzones.add(zone);
-		} else {
-			uzones.add(jsonLocalZone);
-		}
-		jsonRequest.add("updatezones", uzones);
-		
-		JsonObject jsonRequestFull = new JsonObject();
-	
-		//MSG.addProperty("message", "1234");
-		JsonArray testArrayJson = new JsonArray();
-		JsonObject MSG = new JsonObject();
-		MSG.addProperty("message", jsonRequest.toString());
-		testArrayJson.add(MSG);
-		jsonRequestFull.add("EncReq", testArrayJson);
-		
+
+		// S-10x 전송
+		String gml = SV40EncReq.getEncReq("EN", jsonConfig, report);
 		addLog("Requested update check for - EN");
+		m_mcClient.sendMessage(gml);
 		
-		//m_mcClient.sendMessage(jsonRequest.toString());
-		m_mcClient.sendMessage(jsonRequestFull.toString());
+//		JsonObject jsonRequest = new JsonObject();
+//		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
+//		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
+//		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
+//		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
+//		jsonRequest.addProperty("latitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lat"));
+//		jsonRequest.addProperty("longitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lon"));
+//		
+//		jsonRequest.addProperty("category", "EN");
+//		
+//		JsonArray zones = new JsonArray();
+//		
+//		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
+//		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
+//		
+//		// basezones + updatezones
+//		JsonObject jsonLocalZone = report.getBaseZone(localZone);
+//		if (jsonLocalZone == null) {
+//			JsonObject zone = new JsonObject();
+//			zone.addProperty("zone", localZone);
+//			zone.addProperty("zonever", zonever);
+//			zone.addProperty("version", "");
+//			zone.addProperty("releaseDate", "");
+//			zones.add(zone);
+//		} else {
+//			zones.add(jsonLocalZone);
+//		}
+//		jsonRequest.add("basezones", zones);
+//		
+//		JsonArray uzones = new JsonArray();
+//		jsonLocalZone = report.getUpdateZone(localZone);
+//		if (jsonLocalZone == null) {
+//			JsonObject zone = new JsonObject();
+//			zone.addProperty("zone", localZone);
+//			zone.addProperty("zonever", zonever);
+//			zone.addProperty("version", "");
+//			zone.addProperty("releaseDate", "");
+//			uzones.add(zone);
+//		} else {
+//			uzones.add(jsonLocalZone);
+//		}
+//		jsonRequest.add("updatezones", uzones);
+//		
+//		JsonObject jsonRequestFull = new JsonObject();
+//	
+//		JsonArray testArrayJson = new JsonArray();
+//		JsonObject MSG = new JsonObject();
+//		MSG.addProperty("message", jsonRequest.toString());
+//		testArrayJson.add(MSG);
+//		jsonRequestFull.add("EncReq", testArrayJson);
+//		
+//		addLog("Requested update check for - EN");
+//		
+//		m_mcClient.sendMessage(jsonRequestFull.toString());
 	
 		return bRet;
 	}
@@ -266,69 +269,72 @@ public class SV40EDUCController {
 		}
 		
 		JsonObject jsonConfig = getConfig();
-		
-		JsonObject jsonRequest = new JsonObject();
-		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		//jsonRequest.addProperty("zone", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone"));
-		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
-		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
-		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
-		jsonRequest.addProperty("latitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lat"));
-		jsonRequest.addProperty("longitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lon"));
-		
-		jsonRequest.addProperty("category", "ER");
-		
 		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
 		JsonObject jsonReport = report.toJson();
-		/* remove cells property for the limit of size */
-//		jsonReport.add("cells", null);
-//		jsonReport.add("encs", null);
-//		jsonRequest.add("report", jsonReport);
-		
-		JsonArray zones = new JsonArray();
-		
-		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
-		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
-		
-		// base가 없는 경우
-		JsonObject jsonLocalZone = report.getBaseZone(localZone);
-		if (jsonLocalZone == null) {
-			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "EN");
-			addLog(msg);
-			return false;
-		} else {
-			zones.add(jsonLocalZone);
-		}
-		jsonRequest.add("basezones", zones);
-		
-		JsonArray uzones = new JsonArray();
-		jsonLocalZone = report.getUpdateZone(localZone);
-		if (jsonLocalZone == null) {
-			JsonObject zone = new JsonObject();
-			zone.addProperty("zone", localZone);
-			zone.addProperty("zonever", zonever);
-			zone.addProperty("version", "");
-			zone.addProperty("releaseDate", "");
-			uzones.add(zone);
-		} else {
-			uzones.add(jsonLocalZone);
-		}
-		jsonRequest.add("updatezones", uzones);
-		
-//		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
-//		jsonRequest.add("zones", jsonUserZones);
-		
-		JsonObject jsonRequestFull = new JsonObject();
-		
-		JsonArray testArrayJson = new JsonArray();
-		JsonObject MSG = new JsonObject();
-		MSG.addProperty("message", jsonRequest.toString());
-		testArrayJson.add(MSG);
-		jsonRequestFull.add("EncReq", testArrayJson);
-		
+
+		// S-10x 전송
+		String gml = SV40EncReq.getEncReq("ER", jsonConfig, report);
 		addLog("Requested update check for - ER");
-		//m_mcClient.sendMessage(jsonRequest.toString());
-		m_mcClient.sendMessage(jsonRequestFull.toString());
+		m_mcClient.sendMessage(gml);
+		
+//		JsonObject jsonRequest = new JsonObject();
+//		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
+//		jsonRequest.addProperty("maker", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.maker"));
+//		jsonRequest.addProperty("model", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.model"));
+//		jsonRequest.addProperty("serial", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.serial"));
+//		jsonRequest.addProperty("latitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lat"));
+//		jsonRequest.addProperty("longitude", SV40EDUUtil.queryJsonValueToString(jsonConfig, "ecs.position.lon"));
+//		
+//		jsonRequest.addProperty("category", "ER");
+//		
+//		/* remove cells property for the limit of size */
+////		jsonReport.add("cells", null);
+////		jsonReport.add("encs", null);
+////		jsonRequest.add("report", jsonReport);
+//		
+//		JsonArray zones = new JsonArray();
+//		
+//		String localZone = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.zone");
+//		String zonever = SV40EDUUtil.getZoneVer(m_jsonZone, localZone);
+//		
+//		// base가 없는 경우
+//		JsonObject jsonLocalZone = report.getBaseZone(localZone);
+//		if (jsonLocalZone == null) {
+//			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "EN");
+//			addLog(msg);
+//			return false;
+//		} else {
+//			zones.add(jsonLocalZone);
+//		}
+//		jsonRequest.add("basezones", zones);
+//		
+//		JsonArray uzones = new JsonArray();
+//		jsonLocalZone = report.getUpdateZone(localZone);
+//		if (jsonLocalZone == null) {
+//			JsonObject zone = new JsonObject();
+//			zone.addProperty("zone", localZone);
+//			zone.addProperty("zonever", zonever);
+//			zone.addProperty("version", "");
+//			zone.addProperty("releaseDate", "");
+//			uzones.add(zone);
+//		} else {
+//			uzones.add(jsonLocalZone);
+//		}
+//		jsonRequest.add("updatezones", uzones);
+//		
+////		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
+////		jsonRequest.add("zones", jsonUserZones);
+//		
+//		JsonObject jsonRequestFull = new JsonObject();
+//		
+//		JsonArray testArrayJson = new JsonArray();
+//		JsonObject MSG = new JsonObject();
+//		MSG.addProperty("message", jsonRequest.toString());
+//		testArrayJson.add(MSG);
+//		jsonRequestFull.add("EncReq", testArrayJson);
+//		
+//		addLog("Requested update check for - ER");
+//		m_mcClient.sendMessage(jsonRequestFull.toString());
 		
 		return bRet;
 	}
@@ -349,25 +355,24 @@ public class SV40EDUCController {
 		
 		JsonObject jsonConfig = getConfig();
 		
-		JsonObject jsonRequest = new JsonObject();
-		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
-		
-		
-//		SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
-//		JsonObject jsonReport = report.toJson();
-//		
-//		JsonArray jsonUserZones = jsonReport.get("zones").getAsJsonArray();
-//		jsonRequest.add("zones", jsonUserZones);
-		JsonObject jsonRequestFull = new JsonObject();
-		
-		JsonArray testArrayJson = new JsonArray();
-		JsonObject MSG = new JsonObject();
-		MSG.addProperty("message", jsonRequest.toString());
-		testArrayJson.add(MSG);
-		jsonRequestFull.add("EncZoneReq", testArrayJson);
-		
+		// S-10X 전송
+		String gml = SV40EncZoneReq.getEncZoneReq(jsonConfig);
 		addLog("Requested zone info.");
-		m_mcClient.sendMessage(jsonRequestFull.toString());
+		m_mcClient.sendMessage(gml);
+		
+//		JsonObject jsonRequest = new JsonObject();
+//		jsonRequest.addProperty("license", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.license"));
+//		
+//		JsonObject jsonRequestFull = new JsonObject();
+//		
+//		JsonArray testArrayJson = new JsonArray();
+//		JsonObject MSG = new JsonObject();
+//		MSG.addProperty("message", jsonRequest.toString());
+//		testArrayJson.add(MSG);
+//		jsonRequestFull.add("EncZoneReq", testArrayJson);
+//		
+//		addLog("Requested zone info.");
+//		m_mcClient.sendMessage(jsonRequestFull.toString());
 		
 		return bRet;
 	}
@@ -493,7 +498,7 @@ public class SV40EDUCController {
 		JsonObject jsonConfig = getConfig();
 		String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
 		String destDirectory = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.path") +"\\"+
-				fileName.substring(0, fileName.lastIndexOf(".")-1);
+				fileName.substring(0, fileName.lastIndexOf("."));
 				//SV40EDUUtil.queryJsonValueToString(jsonFile, "destPath");
 		
 		UnzipParameters param = new UnzipParameters();
@@ -624,12 +629,12 @@ public class SV40EDUCController {
 		String message = jsonResponse.get("message").getAsString();
 		
 		if (result.equals("error")) {
-			addLog("Update Error " + message);
+			addLog("Update Error: " + message);
 			return;
 		}
 		
 		if (!result.equals("ok")) {
-			addLog("Update Error " + message);
+			addLog("Update Error: " + message);
 			//addLog("Update Error : Unknown");
 			return;
 		}

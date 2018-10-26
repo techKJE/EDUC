@@ -182,7 +182,6 @@ public class SV40EDUCFTPDownloader extends Thread {
 								lRet = lengthOfFile;
 							}
 						}
-	
 					} catch (CopyStreamException  e) {
 						// file not found or failure
 						lRet = -1;

@@ -14,9 +14,17 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -267,5 +275,28 @@ public class SV40EDUUtil {
 		}
 	
 		return ver;
+	}
+	
+	//
+	static public String getCategoryOfService(String gml) {
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		String categoryOfService = "";
+		
+		try
+		{
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document doc = db.parse(new InputSource(new StringReader(gml)));
+			doc.getDocumentElement().normalize();
+			
+			NodeList nodes = doc.getElementsByTagName("categoryOfService");
+			if (nodes.getLength() > 0)
+				categoryOfService = nodes.item(0).getTextContent();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return categoryOfService;
 	}
 }

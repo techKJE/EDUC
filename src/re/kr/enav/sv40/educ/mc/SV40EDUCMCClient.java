@@ -10,6 +10,8 @@ Modifier :
 /* -------------------------------------------------------- */
 package re.kr.enav.sv40.educ.mc;
 
+import java.io.IOException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,8 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.net.ConnectException;
-import java.io.IOException;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -27,11 +28,12 @@ import com.google.gson.JsonParser;
 import kr.ac.kaist.mms_client.MMSClientHandler;
 import net.etri.pkilib.client.ClientPKILibrary;
 import net.etri.pkilib.tool.ByteConverter;
-
 import re.kr.enav.sv40.educ.controller.SV40EDUCController;
 import re.kr.enav.sv40.educ.util.SV40EDUErrCode;
 import re.kr.enav.sv40.educ.util.SV40EDUErrMessage;
 import re.kr.enav.sv40.educ.util.SV40EDUUtil;
+import re.kr.enav.sv40.educ.util.SV40EncUpdate;
+import re.kr.enav.sv40.educ.util.SV40EncZoneRes;
 import re.kr.enav.sv40.educ.util.TaskManager;
 /**
  * @brief EDUC MC클라이언트 클래스
@@ -186,47 +188,54 @@ public class SV40EDUCMCClient extends Thread{
 			@Override
 			public void callbackMethod(Map<String, List<String>> headerField, List<String> messages) {
 				printHeader("MC Receiver",headerField);
-				
+			
 				Iterator<String> iter = messages.iterator();
 				while (iter.hasNext()){
 					String message = iter.next();
 					JsonParser parser = new JsonParser();
 					try {
-						/* response from MCC
-						 * {
-						 *		"EncUpdate": [{          
-						 *			"message": "{......}"
-						 *		}]
-						 * }
-						 * {
-						 * 		"EncZoneRes":[{
-						 * 			"message": "{......}"
-						 * 		}]
-						 * }
-						 */
-						JsonObject jsonResponse = (JsonObject)parser.parse(message);
+
+						// S-10x 수신
+						String categoryOfService = SV40EDUUtil.getCategoryOfService(message);
+						if (categoryOfService.equals("Zone Information"))
+						{
+							JsonObject jsonRes = SV40EncZoneRes.getEncZoneRes(message);
+							m_controller.processEncZoneReceive(jsonRes);
+						}
+						else if (categoryOfService.equals("ENC"))
+						{
+							JsonObject jsonRes = SV40EncUpdate.getEncUpdate(message);
+							m_controller.processMCMessageReceive(jsonRes);
+						}
 						
-						JsonArray jsonTopic;
-						JsonElement elZone = jsonResponse.get("EncZoneRes");
-						if (elZone != null) 
-							jsonTopic = jsonResponse.get("EncZoneRes").getAsJsonArray();
-						else 
-							jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
-						
-						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
-						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
-						
-						if (elZone != null)
-							m_controller.processEncZoneReceive(jsonMessage2);
-						else
-							m_controller.processMCMessageReceive(jsonMessage2);
-						
-						
-//						JsonArray jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+//						/* response from MCC
+//						 * {
+//						 *		"EncUpdate": [{          
+//						 *			"message": "{......}"
+//						 *		}]
+//						 * }
+//						 * {
+//						 * 		"EncZoneRes":[{
+//						 * 			"message": "{......}"
+//						 * 		}]
+//						 * }
+//						 */
+//						JsonObject jsonResponse = (JsonObject)parser.parse(message);
+//						
+//						JsonArray jsonTopic;
+//						JsonElement elZone = jsonResponse.get("EncZoneRes");
+//						if (elZone != null) 
+//							jsonTopic = jsonResponse.get("EncZoneRes").getAsJsonArray();
+//						else 
+//							jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+//						
 //						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
 //						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
-//						JsonArray packageObj = jsonMessage2.get("packages").getAsJsonArray();
-//						m_controller.processMCMessageReceive(jsonMessage2);
+//						
+//						if (elZone != null)
+//							m_controller.processEncZoneReceive(jsonMessage2);
+//						else
+//							m_controller.processMCMessageReceive(jsonMessage2);
 					} catch (Exception e) {
 						m_controller.addLog("Receiver failed to parse message from EDUS:"+message);
 					}

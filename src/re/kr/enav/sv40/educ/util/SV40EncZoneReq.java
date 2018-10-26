@@ -21,7 +21,7 @@ import com.google.gson.JsonObject;
 public class SV40EncZoneReq {
 	public static String getEncZoneReq(JsonObject config)
 	{
-		String xml="";
+		String gml="";
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		
 		try
@@ -62,14 +62,14 @@ public class SV40EncZoneReq {
 			StreamResult result = new StreamResult(writer);
 			
 			xfer.transform(source, result);
-			xml = writer.getBuffer().toString();
+			gml = writer.getBuffer().toString();
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 		
-		return xml;
+		return gml;
 	}
 	
 	//

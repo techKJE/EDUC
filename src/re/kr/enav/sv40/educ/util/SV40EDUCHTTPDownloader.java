@@ -96,50 +96,6 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		}
 	}
 	
-	private long download2(String srcUrl, String destFilePath, String strMD5Hash) throws Exception {
-		OutputStream out = null;
-        URLConnection conn = null;
-        InputStream in = null;
-        long numWritten = 0;
-
-        try {
-            URL url = new URL(srcUrl);
-            out = new BufferedOutputStream(new FileOutputStream(destFilePath));
-            conn = url.openConnection();
-            in = conn.getInputStream();
-            byte[] buffer = new byte[1024];
-
-            int numRead;
-            //long numWritten = 0;
-
-            while ((numRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, numRead);
-                numWritten += numRead;
-            }
-
-            System.out.println(m_strDestFilePath + "\t" + numWritten);
-        } 
-        catch (Exception exception) { 
-            exception.printStackTrace();
-        } 
-        finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-                if (out != null) {
-                    out.close();
-                }
-                
-                
-            } 
-            catch (IOException ioe) {
-            }
-        }
-        
-        return numWritten;
-	}
-	
 	/**
 	 * @brief download to destination
 	 * @details download to destination
@@ -168,14 +124,14 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		
 		RandomAccessFile output = null;
 		URL url = null;
-		//URLConnection conn = null;
-		HttpURLConnection conn = null;
+		URLConnection conn = null;
 		InputStream input = null;
 		
 		if (lRet != -1) {
 			try {
 				output = new RandomAccessFile(file.getAbsolutePath(), "rw");
 				fileSize = output.length(); // 현재 파일 크기
+				fileSize = 0; // 이어받기 x
 				output.seek(fileSize); 
 			} catch (Exception e) {
 				lRet = -1;
@@ -185,27 +141,25 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		
 		if (lRet != -1) {
 			try {
-				srcUrl = srcUrl.replaceAll(" ", "%20");
+				//srcUrl = srcUrl.replaceAll(" ", "%20");
 				url = new URL(srcUrl);
-				conn = (HttpURLConnection)url.openConnection();
-				//conn = url.openConnection();
+				conn = url.openConnection();
 
 //				int code = conn.getResponseCode();
 //				String msg = String.format("response code: %d", code);
 //				m_controller.addLog(msg);
 
+				conn.setRequestProperty("Accept-Ranges", "bytes");
 				conn.setRequestProperty("Range", "bytes=" + String.valueOf(fileSize) + '-');
 				conn.connect();
 			} catch (SocketException se) {
 				// connect fail
 				errorCode = 3;
 				lRet = -2;
-				conn.disconnect();
 			} catch (Exception e) {
 				// file not found or failure
 				lRet = -1;
 				errorCode = 4;
-				conn.disconnect();
 			}
 		}
 		
@@ -261,6 +215,16 @@ public class SV40EDUCHTTPDownloader extends Thread {
 				msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_006, "File");
 			m_controller.addLog(msg);			
 			throw new Exception();
+		} else {
+			// 파일 유효성 확인
+			if (strMD5Hash != "") {
+				String curMD5Hash = SV40EDUUtil.getMD5(destFilePath);
+				if (!strMD5Hash.equals(curMD5Hash)) {
+					String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_007, "File");
+					m_controller.addLog(msg);			
+					throw new Exception();
+				}
+			}
 		}
 		
 		return lRet;

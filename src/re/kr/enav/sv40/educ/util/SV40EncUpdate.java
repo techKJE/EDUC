@@ -14,9 +14,8 @@ import org.xml.sax.InputSource;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-public class SV40EncZoneRes {
-	public static JsonObject getEncZoneRes(String gml)
-	{
+public class SV40EncUpdate {
+	public static JsonObject getEncUpdate(String gml) {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		JsonObject jsonRes = new JsonObject();
 		
@@ -49,51 +48,70 @@ public class SV40EncZoneRes {
 			System.out.println("text: " + text);
 			jsonRes.addProperty("message", text);
 			
-			String categoryOfENC = getTextContent(doc, "categoryOfENC");
-			System.out.println("- categoryOfENC: " + categoryOfENC);
-			
-			String categoryOfService = getTextContent(doc, "categoryOfService");
-			System.out.println("- categoryOfService: " + categoryOfService);
-			
-			JsonArray jsonZones = new JsonArray();
-			
-			NodeList nodes = getNodeList(doc, "zoneInformation");
+			JsonArray jsonPackages = new JsonArray();
+
+			NodeList nodes = getNodeList(doc, "downloadInformation");
 			for (int i=0; i<nodes.getLength(); i++)
 			{
-				JsonObject jsonZone = new JsonObject();
+				JsonObject jsonPackage = new JsonObject();
 				
-				System.out.println("zoneInformation #" + i);
-				Element zinfo = (Element)nodes.item(i);
+				System.out.println("downloadInformation #" + i);
+				Element dinfo = (Element)nodes.item(i);
+				String categoryOfENC = getTextContent(dinfo, "categoryOfENC");
+				System.out.println("- categoryOfENC: " + categoryOfENC);
 				
-				String zoneName = getTextContent(zinfo, "zoneName");
+				String categoryOfService = getTextContent(dinfo, "categoryOfService");
+				System.out.println("- categoryOfService: " + categoryOfService);
+				
+				String hashFunctionValue = getTextContent(dinfo, "hashFunctionValue");
+				System.out.println("- hashFunctionValue: " + hashFunctionValue);
+				
+				// zoneOfENC
+				String zoneName = getTextContent(dinfo, "zoneName");
 				System.out.println("- zoneName: " + zoneName);
 				
-				String zoneVersion = getTextContent(zinfo, "zoneVersion");
+				String zoneVersion = getTextContent(dinfo, "zoneVersion");
 				System.out.println("- zoneVersion: " + zoneVersion);
 				
-				// boundary
-				String northLatitude = getTextContent(zinfo, "northLatitude");
-				System.out.println("- northLatitude: " + northLatitude);
+				// downloadExchangeSet
+				String downloadURL = getTextContent(dinfo, "downloadURL");
+				System.out.println("- downloadURL: " + downloadURL);
 				
-				String southLatitude = getTextContent(zinfo, "southLatitude");
-				System.out.println("- southLatitude: " + southLatitude);
+				String fileName = getTextContent(dinfo, "fileName");
+				System.out.println("- fileName: " + fileName);
 				
-				String eastLongitude = getTextContent(zinfo, "eastLongitude");
-				System.out.println("- eastLongitude: " + eastLongitude);
+				String fileSize = getTextContent(dinfo, "fileSize");
+				System.out.println("- fileSize: " + fileSize);
 				
-				String westLongitude = getTextContent(zinfo, "westLongitude");
-				System.out.println("- westLongitude: " + westLongitude);
+				// ENCProperty
+				String encryption = getTextContent(dinfo, "encryption");
+				System.out.println("- encryption: " + encryption);
 				
-				jsonZone.addProperty("name", zoneName);
-				jsonZone.addProperty("ver", zoneVersion);
-				jsonZone.addProperty("slot", southLatitude);
-				jsonZone.addProperty("wlon", westLongitude);
-				jsonZone.addProperty("nlot", northLatitude);
-				jsonZone.addProperty("elon", eastLongitude);
+				String typeOfENC = getTextContent(dinfo, "typeOfENC");
+				System.out.println("- typeOfENC: " + typeOfENC);
 				
-				jsonZones.add(jsonZone);
+				String versionOfENC = getTextContent(dinfo, "versionOfENC");
+				System.out.println("- versionOfENC: " + versionOfENC);
+				
+				String releaseDate = getTextContent(dinfo, "releaseDate");
+				System.out.println("- releaseDate: " + releaseDate);
+				
+				jsonPackage.addProperty("url",downloadURL);
+				jsonPackage.addProperty("zone", zoneName);
+				jsonPackage.addProperty("zonever", zoneVersion);
+				jsonPackage.addProperty("encType", typeOfENC);
+				jsonPackage.addProperty("fileCategory", zoneName);
+				jsonPackage.addProperty("category", categoryOfENC.equals("update collection")? "ER":"EN");
+				jsonPackage.addProperty("fileName", fileName);
+				jsonPackage.addProperty("fileSize", Integer.parseInt(fileSize));
+				jsonPackage.addProperty("destPath", "");
+				jsonPackage.addProperty("version", versionOfENC);
+				jsonPackage.addProperty("releaseDate", releaseDate);
+				jsonPackage.addProperty("md5", hashFunctionValue);
+				
+				jsonPackages.add(jsonPackage);
 			}
-			jsonRes.add("zones", jsonZones);
+			jsonRes.add("packages", jsonPackages);
 		}
 		catch (Exception e)
 		{
@@ -157,5 +175,5 @@ public class SV40EncZoneRes {
 			return null;
 		
 		return nodes.item(0).getTextContent();
-	}
+	}	
 }
