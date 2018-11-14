@@ -50,8 +50,10 @@ public class SV40EncReq {
 			request.appendChild(getTextContent(doc, "shipMRN", srcMRN));
 			
 			//
-			String categoryOfENC = category.equals("EN")? "base collection":"update collection";
-			request.appendChild(getTextContent(doc, "categoryOfENC", categoryOfENC));
+//			String categoryOfENC = category.equals("EN")? "base collection":"update collection";
+//			request.appendChild(getTextContent(doc, "categoryOfENC", categoryOfENC));
+			
+			request.appendChild(getTextContent(doc, "categoryOfENC", category));
 			
 			//
 			request.appendChild(getTextContent(doc, "categoryOfService", "ENC"));

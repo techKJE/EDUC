@@ -86,9 +86,9 @@ public class SV40EncZoneRes {
 				
 				jsonZone.addProperty("name", zoneName);
 				jsonZone.addProperty("ver", zoneVersion);
-				jsonZone.addProperty("slot", southLatitude);
+				jsonZone.addProperty("slat", southLatitude);
 				jsonZone.addProperty("wlon", westLongitude);
-				jsonZone.addProperty("nlot", northLatitude);
+				jsonZone.addProperty("nlat", northLatitude);
 				jsonZone.addProperty("elon", eastLongitude);
 				
 				jsonZones.add(jsonZone);
