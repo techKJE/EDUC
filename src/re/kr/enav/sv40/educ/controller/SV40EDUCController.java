@@ -47,7 +47,8 @@ public class SV40EDUCController {
 	
 	public interface CallbackView {
 		void updateProgress(int nPercent, String label);
-		void addLog(String message);
+		void addLog(StackTraceElement el,String message);
+		void debugLog(StackTraceElement el, String message);
 		void failDownload(JsonObject jsonFile);
 	}
 
@@ -57,6 +58,7 @@ public class SV40EDUCController {
 	public final static String s_defaultPathOfConfig = "Res\\default.json";
 	public final static String s_pathOfReport = "Res\\report.json";
 	public final static String s_pathOfZone = "Res\\zone.json";
+	public final static String s_log4Config = "Res\\log4j.properties";
 	public final static String s_nameOfCatalog = "S101ed1.CAT";
 	
 	public JsonObject m_jsonConfig;	/**< store configuration */	
@@ -66,6 +68,7 @@ public class SV40EDUCController {
 	public void setCallbackProgress(CallbackView callback) {
 		this.m_callbackView = callback;
 	}
+	
 	public SV40EDUCController() {
 		m_taskDownload = new TaskManager(SV40EDUCHTTPDownloader.MAX_COUNT_TRYDOWNLOAD, SV40EDUCHTTPDownloader.TIME_WAIT_TRYDOWNLOAD);
 		m_taskMC = new TaskManager(SV40EDUUtil.RETRY_MAXCOUNT, SV40EDUUtil.RETRY_TIMEWAIT);
@@ -95,7 +98,8 @@ public class SV40EDUCController {
 		
 		startMCClient();
 		startLocalNetwork();
-	}	
+	}
+	
 	public JsonObject getConfig() {
 		return m_jsonConfig;
 	}
@@ -125,6 +129,7 @@ public class SV40EDUCController {
 		
 		return json;
 	}
+	
 	/**
 	 * @brief read configuration
 	 * @details read json file and return configuration json object
@@ -133,6 +138,7 @@ public class SV40EDUCController {
 	private JsonObject readConfig(String path) throws Exception {
 		return SV40EDUUtil.readJson(path);
 	}	
+	
 	/**
 	 * @brief write configuration
 	 * @details write json
@@ -140,6 +146,7 @@ public class SV40EDUCController {
 	public boolean saveConfig(JsonObject json) {
 		return SV40EDUUtil.writeJson(json, s_pathOfConfig);
 	}
+	
 	/**
 	 * @brief apply configuration change
 	 * @details save changed configuration and apply
@@ -165,6 +172,7 @@ public class SV40EDUCController {
 			startMCClient();
 		}
 	}
+	
 	public JsonObject loadDefaultConfig() {
 		JsonObject json = null;
 		try {
@@ -181,11 +189,12 @@ public class SV40EDUCController {
 	 */		
 	public boolean requestDownloadEN() {
 		boolean bRet = true;
-
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
 		// 내부네트웍 확인
 		if (SV40EDUUtil.LOCALNETWORK_STATE == false) {
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
-			addLog(msg);
+			addLog(el, msg);
 			return false;
 		}
 		
@@ -194,7 +203,9 @@ public class SV40EDUCController {
 
 		// S-10x 전송
 		String gml = SV40EncReq.getEncReq("EN", jsonConfig, report);
-		addLog("Requested update check for - EN");
+		addLog(el, "Requested update check for - EN");
+		debugLog(el, gml);
+
 		m_mcClient.sendMessage(gml);
 		
 //		JsonObject jsonRequest = new JsonObject();
@@ -260,11 +271,12 @@ public class SV40EDUCController {
 	 */		
 	public boolean requestDownloadER() {
 		boolean bRet = true;
-
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
 		// 내부네트웍 확인
 		if (SV40EDUUtil.LOCALNETWORK_STATE == false) {
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
-			addLog(msg);
+			addLog(el, msg);
 			return false;
 		}
 		
@@ -274,7 +286,9 @@ public class SV40EDUCController {
 
 		// S-10x 전송
 		String gml = SV40EncReq.getEncReq("ER", jsonConfig, report);
-		addLog("Requested update check for - ER");
+		addLog(el, "Requested update check for - ER");
+		debugLog(el, gml);
+		
 		m_mcClient.sendMessage(gml);
 		
 //		JsonObject jsonRequest = new JsonObject();
@@ -345,11 +359,12 @@ public class SV40EDUCController {
 	 */		
 	public boolean requestDownloadZone() {
 		boolean bRet = true;
-
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
 		// 내부네트웍 확인
 		if (SV40EDUUtil.LOCALNETWORK_STATE == false) {
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
-			addLog(msg);
+			addLog(el, msg);
 			return false;
 		}
 		
@@ -357,7 +372,9 @@ public class SV40EDUCController {
 		
 		// S-10X 전송
 		String gml = SV40EncZoneReq.getEncZoneReq(jsonConfig);
-		addLog("Requested zone info.");
+		addLog(el, "Requested zone info.");
+		debugLog(el, gml);
+	
 		m_mcClient.sendMessage(gml);
 		
 //		JsonObject jsonRequest = new JsonObject();
@@ -423,18 +440,26 @@ public class SV40EDUCController {
 	 * @details add log
 	 * @param message message to log
 	 */		
-	public void addLog(String message) {
+	public void addLog(StackTraceElement el, String message) {
 		if (m_callbackView != null) {
-			m_callbackView.addLog(message);
+			m_callbackView.addLog(el, message);
 		}		
 	}
+	
+	public void debugLog(StackTraceElement el, String message) {
+		if (m_callbackView != null) {
+			m_callbackView.debugLog(el, message);
+		}		
+	}
+	
 	/**
 	 * @brief add log
 	 * @details add log
 	 * @param message message to log
 	 */		
 	public void failedDownload() {
-		addLog("Failed download");
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		addLog(el, "Failed download");
 	}
 	/**
 	 * @brief add log
@@ -442,7 +467,8 @@ public class SV40EDUCController {
 	 * @param message message to log
 	 */		
 	public void cancelDownload() {
-		addLog("Cancel download");
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		addLog(el, "Cancel download");
 	}
 	/**
 	 * @brief add log
@@ -450,13 +476,15 @@ public class SV40EDUCController {
 	 * @param message message to log
 	 */		
 	public void completeDownload(String zipFilePath,JsonObject jsonFile) {
-		addLog("completed download");
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
+		addLog(el, "completed download");
 		// unzip file
 		try {
 			String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
-			addLog("starting unzip - " + fileName);			
+			addLog(el, "starting unzip - " + fileName);			
 			String destDir = unzip(zipFilePath, jsonFile);
-			addLog("Ready to use ENC");
+			addLog(el, "Ready to use ENC");
 			
 			// S-101
 			SV40S101UpdateStatusReport report = new SV40S101UpdateStatusReport(s_pathOfReport);
@@ -480,7 +508,7 @@ public class SV40EDUCController {
 			int pos = zipFilePath.lastIndexOf('\\');
 			String file = zipFilePath.substring(pos+1);
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_005, file);
-			addLog(msg);
+			addLog(el, msg);
 			//addLog("Failed to unzip download");
 			e.printStackTrace();
 		}
@@ -624,17 +652,19 @@ public class SV40EDUCController {
 	 * @details call back Maritime Cloud Message
 	 */			
 	public void processMCMessageReceive(JsonObject jsonResponse) {
-		addLog("Received update items "+ jsonResponse.size());
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
+		addLog(el, "Received update items "+ jsonResponse.size());
 		String result = jsonResponse.get("result").getAsString();
 		String message = jsonResponse.get("message").getAsString();
 		
 		if (result.equals("error")) {
-			addLog("Update Error: " + message);
+			addLog(el, "Update Error: " + message);
 			return;
 		}
 		
 		if (!result.equals("ok")) {
-			addLog("Update Error: " + message);
+			addLog(el, "Update Error: " + message);
 			//addLog("Update Error : Unknown");
 			return;
 		}
@@ -643,7 +673,7 @@ public class SV40EDUCController {
 		JsonArray jsonPackages = jsonResponse.get("packages").getAsJsonArray();
 		int nSizePackages = jsonPackages.size();
 		if (nSizePackages == 0) {
-			addLog("ENC is already updated.");
+			addLog(el, "ENC is already updated.");
 			return;
 		}
 		
@@ -655,7 +685,7 @@ public class SV40EDUCController {
 	    
 	    // 다운로드 여부 선택
 	    if (response != JOptionPane.OK_OPTION) {
-	    	addLog("ENC download cancel");
+	    	addLog(el, "ENC download cancel");
 	    } else {
 			// start to download
 			for (int i=0; i<nSizePackages; i++) {
@@ -674,17 +704,21 @@ public class SV40EDUCController {
 	}
 	
 	public void processEncZoneReceive(JsonObject jsonResponse) {
-		addLog("Received zone items "+ jsonResponse.size());
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
+		addLog(el, "Received zone items "+ jsonResponse.size());
+		debugLog(el, jsonResponse.toString());
+		
 		String result = jsonResponse.get("result").getAsString();
 		String message = jsonResponse.get("message").getAsString();
 		
 		if (result.equals("error")) {
-			addLog("Zone Error " + message);
+			addLog(el, "Zone Error " + message);
 			return;
 		}
 		
 		if (!result.equals("ok")) {
-			addLog("Zone Error " + message);
+			addLog(el, "Zone Error " + message);
 			return;
 		}
 		
@@ -692,7 +726,7 @@ public class SV40EDUCController {
 		JsonArray jsonZones = jsonResponse.get("zones").getAsJsonArray();
 		int nSizeZones = jsonZones.size();
 		if (nSizeZones == 0) {
-			addLog("ZONE not found");
+			addLog(el, "ZONE not found");
 			return;
 		}
 
@@ -700,7 +734,7 @@ public class SV40EDUCController {
 		jsonResponse.remove("message");
 		
 		SV40EDUUtil.writeJson(jsonResponse, s_pathOfZone);
-		addLog("Received zone done");
+		addLog(el, "Received zone done");
 		
 		// load zone
 		m_jsonZone = loadZone();

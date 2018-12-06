@@ -29,7 +29,8 @@ public class LocalNetworkState extends Thread {
 				String msg = (curstate == true)? "localhost alive" : SV40EDUErrMessage.get(SV40EDUErrCode.ERR_002, "localhost");
 				if (curstate != SV40EDUUtil.LOCALNETWORK_STATE) {
 					SV40EDUUtil.LOCALNETWORK_STATE = curstate;
-					m_controller.addLog(msg);
+					StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+					m_controller.addLog(el, msg);
 				}
 				
 				Thread.sleep(m_nDuration);

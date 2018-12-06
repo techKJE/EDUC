@@ -37,6 +37,8 @@ import com.google.gson.JsonObject;
 import kr.ac.kaist.mms_client.MMSConfiguration;
 import re.kr.enav.sv40.educ.controller.SV40EDUCController;
 
+import org.apache.log4j.*;
+
 /**
  * @brief EDUC 의 뷰를 위한 클래스
  * @details View 컴포넡트를 초기화
@@ -55,6 +57,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	private static String s_MENU_CLEARLOG = "Clear Log";
 	private static String s_MENU_CONFIG = "Config";
 
+	private static final Logger m_logger = Logger.getLogger(SV40EDUCMainView.class);
+	
 	SimpleDateFormat m_ftDate = new SimpleDateFormat ("yyyy.MM.dd hh:mm:ss");	/**< date format for logging message */
 	
 	private SV40EDUCController m_controller;
@@ -69,6 +73,7 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 		super("ENC Download Update Client-EDUC");
 		m_controller = controller;
 		SV40EDUCMainView view  = this;
+		
 		m_controller.setCallbackProgress(
 			new SV40EDUCController.CallbackView() {
 				@Override
@@ -76,12 +81,17 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 					view.updateProgress(nPercent, label);
 				}
 				@Override
-				public void addLog(String message) {
-					view.addLog(message);
+				public void addLog(StackTraceElement el, String message) {
+					view.addLog(el, message);
+				}
+				@Override
+				public void debugLog(StackTraceElement el, String message) {
+					view.debugLog(el, message);
 				}
 				@Override 
 				public void failDownload(JsonObject jsonFile) {
-					view.addLog("Failed to download");
+					StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+					view.addLog(el, "Failed to download");
 				}				
 			}
 		);
@@ -93,7 +103,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 		
 		setVisible(true);
 		
-		addLog("Application is launched successfuly");
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		addLog(el, "Application is launched successfuly");
 	}
 	
 	/**
@@ -244,20 +255,33 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 		m_progressBar.setStringPainted(true);
 		this.add(m_progressBar,c);
 	}
+	
 	/**
 	 * @brief append message to log list
 	 * @details insert message to top log list with date
 	 * @param message to append log
 	 */
-	public void addLog(String message) {
+	public void addLog(StackTraceElement el, String message) {
+		debugLog(el, message);
+		
 		Date now = new Date( );
 		String log = String.format("%s %s", m_ftDate.format(now), message);
+		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				m_listModel.insertElementAt(log, 0);
 			}
 		});
 	}
+	
+	public void debugLog(StackTraceElement el, String message) {
+		String msg = message;
+		if (el != null)
+			msg = String.format("(%s:%d) %s", el.getFileName(), el.getLineNumber(), message);
+		
+		m_logger.debug(msg);
+	}
+	
 	/**
 	 * @brief clear log
 	 * @details clear all log in the box
@@ -314,6 +338,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	            break;
 	        }
 	    }
+		
+		PropertyConfigurator.configure(SV40EDUCController.s_log4Config);
 		
 		new SV40EDUCMainView(new SV40EDUCController());
 	}

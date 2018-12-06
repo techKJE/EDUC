@@ -60,7 +60,10 @@ public class TestDownload {
 				}
 			}
 			@Override
-			public void addLog(String message) {
+			public void addLog(StackTraceElement el, String message) {
+			}
+			@Override
+			public void debugLog(StackTraceElement el, String message) {
 			}
 			@Override 
 			public void failDownload(JsonObject jsonFile) {

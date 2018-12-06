@@ -91,7 +91,8 @@ public class SV40EDUCConfigView extends JDialog implements ActionListener  {
 				if(txtField != null)
 					txtField.setText(value);
 				else {
-					m_controller.addLog("Invalid Configuration Field:"+field);
+					StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+					m_controller.addLog(el, "Invalid Configuration Field:"+field);
 				}
 			}
 		}

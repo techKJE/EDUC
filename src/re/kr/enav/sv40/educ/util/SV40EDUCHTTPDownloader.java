@@ -107,8 +107,9 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		long lRet = 0;
 		long fileSize = 0, remains, lengthOfFile = 0;
 		int errorCode = 0;
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		
-		m_controller.addLog("Try download - " + srcUrl);
+		m_controller.addLog(el, "Try download - " + srcUrl);
 		
 		File file = new File(destFilePath);
 		if (file.exists() == false) {
@@ -213,7 +214,7 @@ public class SV40EDUCHTTPDownloader extends Thread {
 				msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "FileServer");
 			else 
 				msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_006, "File");
-			m_controller.addLog(msg);			
+			m_controller.addLog(el, msg);			
 			throw new Exception();
 		} else {
 			// 파일 유효성 확인
@@ -221,7 +222,7 @@ public class SV40EDUCHTTPDownloader extends Thread {
 				String curMD5Hash = SV40EDUUtil.getMD5(destFilePath);
 				if (!strMD5Hash.equals(curMD5Hash)) {
 					String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_007, "File");
-					m_controller.addLog(msg);			
+					m_controller.addLog(el, msg);			
 					throw new Exception();
 				}
 			}

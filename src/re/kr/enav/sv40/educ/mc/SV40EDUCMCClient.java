@@ -112,6 +112,7 @@ public class SV40EDUCMCClient extends Thread{
 			m_handlerMCSender.setMsgHeader(headerfield);
 			
 			m_retryCnt=0;
+			StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 			
 			Timer timer = new Timer();
 			TimerTask task = new TimerTask() {
@@ -120,7 +121,7 @@ public class SV40EDUCMCClient extends Thread{
 					if (m_retryCnt >= SV40EDUUtil.RETRY_MAXCOUNT) {
 						timer.cancel();
 						String msg = "잠시 후 다시 시도해 주시기 바랍니다.";
-						m_controller.addLog(msg);
+						m_controller.addLog(el, msg);
 					}
 					else
 					{
@@ -129,10 +130,10 @@ public class SV40EDUCMCClient extends Thread{
 							timer.cancel();
 						} catch (ConnectException ce) {
 							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, "MMSServer");
-							m_controller.addLog(msg);
+							m_controller.addLog(el, msg);
 						} catch (IOException ie) {
 							String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_003, m_strDestServiceMRN);
-							m_controller.addLog(msg);
+							m_controller.addLog(el, msg);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -160,7 +161,8 @@ public class SV40EDUCMCClient extends Thread{
 			public void callbackMethod(Map<String, List<String>> headerField, String message) {
 				printHeader("MC Sender", headerField);
 				if (message!= null && !message.isEmpty()) {
-					m_controller.addLog("Sender Result Message:"+message);
+					StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+					m_controller.addLog(el, "Sender Result Message:"+message);
 				}
 			}
 		});		
@@ -170,10 +172,15 @@ public class SV40EDUCMCClient extends Thread{
 		if (m_bDebugHeader == false) return;
 		
 		Iterator<String> iter = headerField.keySet().iterator();
-		System.out.println("======="+title+"=======");
+		String msg = "======="+title+"=======";
+		System.out.println(msg);
+//		m_controller.debugLog(msg);
+		
 		while (iter.hasNext()){
 			String key = iter.next();
-			System.out.println(key+":"+headerField.get(key).toString());
+			msg = key+":"+headerField.get(key).toString();
+			System.out.println(msg);
+//			m_controller.debugLog(msg);
 		}						
 	}
 	
@@ -183,6 +190,7 @@ public class SV40EDUCMCClient extends Thread{
 	private void initReceiver() throws Exception {
 		int pollInterval = 1000;
 		m_handlerMCReceiver = new MMSClientHandler(m_strSrcMRN);
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		
 		m_handlerMCReceiver.startPolling(m_strDestMccMRN, m_strDestServiceMRN, pollInterval, new MMSClientHandler.PollingResponseCallback() {
 			@Override
@@ -192,6 +200,8 @@ public class SV40EDUCMCClient extends Thread{
 				Iterator<String> iter = messages.iterator();
 				while (iter.hasNext()){
 					String message = iter.next();
+					m_controller.debugLog(el, message);
+					
 					JsonParser parser = new JsonParser();
 					try {
 
@@ -237,7 +247,7 @@ public class SV40EDUCMCClient extends Thread{
 //						else
 //							m_controller.processMCMessageReceive(jsonMessage2);
 					} catch (Exception e) {
-						m_controller.addLog("Receiver failed to parse message from EDUS:"+message);
+						m_controller.addLog(el, "Receiver failed to parse message from EDUS:"+message);
 					}
 				}										
 			}
@@ -254,7 +264,6 @@ public class SV40EDUCMCClient extends Thread{
 				sendMessage(m_strMessageToSend);
 			}
 		} catch (Exception e) {
-			
 			m_taskManager.failed();	// delegate to the TaskManager
 		}
 	}
