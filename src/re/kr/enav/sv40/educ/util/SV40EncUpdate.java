@@ -49,7 +49,11 @@ public class SV40EncUpdate {
 			jsonRes.addProperty("message", text);
 			
 			JsonArray jsonPackages = new JsonArray();
-
+			if (result.equals("fail")) {
+				jsonRes.add("packages", jsonPackages);
+				return jsonRes;
+			}
+			
 			NodeList nodes = getNodeList(doc, "downloadInformation");
 			for (int i=0; i<nodes.getLength(); i++)
 			{
@@ -116,6 +120,7 @@ public class SV40EncUpdate {
 				
 				jsonPackages.add(jsonPackage);
 			}
+			
 			jsonRes.add("packages", jsonPackages);
 		}
 		catch (Exception e)
