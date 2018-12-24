@@ -191,6 +191,7 @@ public class SV40EDUCMCClient extends Thread{
 		int pollInterval = 1000;
 		m_handlerMCReceiver = new MMSClientHandler(m_strSrcMRN);
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		boolean useS10x=true;
 		
 		m_handlerMCReceiver.startPolling(m_strDestMccMRN, m_strDestServiceMRN, pollInterval, new MMSClientHandler.PollingResponseCallback() {
 			@Override
@@ -206,46 +207,52 @@ public class SV40EDUCMCClient extends Thread{
 					try {
 
 						// S-10x ¼ö½Å
-						String categoryOfService = SV40EDUUtil.getCategoryOfService(message);
-						if (categoryOfService.equals("Zone Information"))
+						if (useS10x == true) 
 						{
-							JsonObject jsonRes = SV40EncZoneRes.getEncZoneRes(message);
-							m_controller.processEncZoneReceive(jsonRes);
+							String categoryOfService = SV40EDUUtil.getCategoryOfService(message);
+							if (categoryOfService.equals("Zone Information"))
+							{
+								JsonObject jsonRes = SV40EncZoneRes.getEncZoneRes(message);
+								m_controller.processEncZoneReceive(jsonRes);
+							}
+							else if (categoryOfService.equals("ENC"))
+							{
+								JsonObject jsonRes = SV40EncUpdate.getEncUpdate(message);
+								m_controller.processMCMessageReceive(jsonRes);
+							}
 						}
-						else if (categoryOfService.equals("ENC"))
+						else 
 						{
-							JsonObject jsonRes = SV40EncUpdate.getEncUpdate(message);
-							m_controller.processMCMessageReceive(jsonRes);
-						}
 						
-//						/* response from MCC
-//						 * {
-//						 *		"EncUpdate": [{          
-//						 *			"message": "{......}"
-//						 *		}]
-//						 * }
-//						 * {
-//						 * 		"EncZoneRes":[{
-//						 * 			"message": "{......}"
-//						 * 		}]
-//						 * }
-//						 */
-//						JsonObject jsonResponse = (JsonObject)parser.parse(message);
-//						
-//						JsonArray jsonTopic;
-//						JsonElement elZone = jsonResponse.get("EncZoneRes");
-//						if (elZone != null) 
-//							jsonTopic = jsonResponse.get("EncZoneRes").getAsJsonArray();
-//						else 
-//							jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
-//						
-//						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
-//						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
-//						
-//						if (elZone != null)
-//							m_controller.processEncZoneReceive(jsonMessage2);
-//						else
-//							m_controller.processMCMessageReceive(jsonMessage2);
+						/* response from MCC
+						 * {
+						 *		"EncUpdate": [{          
+						 *			"message": "{......}"
+						 *		}]
+						 * }
+						 * {
+						 * 		"EncZoneRes":[{
+						 * 			"message": "{......}"
+						 * 		}]
+						 * }
+						 */
+						JsonObject jsonResponse = (JsonObject)parser.parse(message);
+						
+						JsonArray jsonTopic;
+						JsonElement elZone = jsonResponse.get("EncZoneRes");
+						if (elZone != null) 
+							jsonTopic = jsonResponse.get("EncZoneRes").getAsJsonArray();
+						else 
+							jsonTopic = jsonResponse.get("EncUpdate").getAsJsonArray();
+						
+						JsonObject jsonMessage = jsonTopic.get(0).getAsJsonObject();
+						JsonObject jsonMessage2 = (JsonObject)parser.parse(jsonMessage.get("message").getAsString());
+						
+						if (elZone != null)
+							m_controller.processEncZoneReceive(jsonMessage2);
+						else
+							m_controller.processMCMessageReceive(jsonMessage2);
+						}
 					} catch (Exception e) {
 						m_controller.addLog(el, "Receiver failed to parse message from EDUS:"+message);
 					}

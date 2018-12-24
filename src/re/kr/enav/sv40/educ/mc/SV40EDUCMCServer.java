@@ -24,6 +24,8 @@ import com.google.gson.JsonParser;
 import kr.ac.kaist.mms_client.MMSClientHandler;
 import kr.ac.kaist.mms_client.MMSConfiguration;
 import re.kr.enav.sv40.educ.util.SV40EDUUtil;
+import re.kr.enav.sv40.educ.util.SV40EncUpdate;
+import re.kr.enav.sv40.educ.util.SV40EncZoneRes;
 import re.kr.enav.sv40.educ.util.SV40S101UpdateStatusReport;
 /**
  * @brief EDUC 시험을 위한 EDUS 목업용 서버 클래스
@@ -117,7 +119,35 @@ public class SV40EDUCMCServer {
 	 */		
 	public static String getResponse(String message) {
 		String response="";
+		boolean useS10x=true;
 		
+		if (useS10x == true)
+		{
+			String categoryOfService = SV40EDUUtil.getCategoryOfService(message);
+			if (categoryOfService.equals("Zone Information"))
+			{
+				try {
+					response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"response_zone.gml")));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else if (categoryOfService.equals("ENC"))
+			{
+				String categoryOfENC = SV40EDUUtil.getCategoryOfENC(message);
+				try {
+					if (categoryOfENC.equals("EN"))
+						response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_en_sample.gml")));
+					else
+						response = new String(Files.readAllBytes(Paths.get("Res"+File.separator+"download_er_sample.gml")));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+
+			return response;
+		}
+
 		JsonParser parser = new JsonParser();
 		//JsonObject jsonRequest = (JsonObject)parser.parse(message);
 		JsonObject jsonObj = (JsonObject)parser.parse(message);
@@ -239,7 +269,7 @@ public class SV40EDUCMCServer {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}			
+			}
 		} catch (IOException ee) {
 			ee.printStackTrace();
 		}

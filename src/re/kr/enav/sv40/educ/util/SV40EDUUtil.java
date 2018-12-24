@@ -299,4 +299,27 @@ public class SV40EDUUtil {
 		
 		return categoryOfService;
 	}
+	
+	//
+	static public String getCategoryOfENC(String gml) {
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		String categoryOfENC = "";
+		
+		try
+		{
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document doc = db.parse(new InputSource(new StringReader(gml)));
+			doc.getDocumentElement().normalize();
+			
+			NodeList nodes = doc.getElementsByTagName("categoryOfENC");
+			if (nodes.getLength() > 0)
+				categoryOfENC = nodes.item(0).getTextContent();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return categoryOfENC;
+	}
 }
