@@ -59,7 +59,7 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 
 	private static final Logger m_logger = Logger.getLogger(SV40EDUCMainView.class);
 	
-	SimpleDateFormat m_ftDate = new SimpleDateFormat ("yyyy.MM.dd hh:mm:ss");	/**< date format for logging message */
+	SimpleDateFormat m_ftDate = new SimpleDateFormat ("yyyy.MM.dd hh:mm:ss.SSS");	/**< date format for logging message */
 	
 	private SV40EDUCController m_controller;
 	private DefaultListModel<String> m_listModel;
@@ -264,8 +264,8 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	public void addLog(StackTraceElement el, String message) {
 		debugLog(el, message);
 		
-		Date now = new Date( );
-		String log = String.format("%s %s", m_ftDate.format(now), message);
+		Date now = new Date();
+		String log = String.format("[%s] %s", m_ftDate.format(now), message);
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -325,8 +325,10 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 	 * @details main view test
 	 */
 	public static void main(String args[]) {
-		//MMSConfiguration.MMS_URL="143.248.55.83:8088";
-		MMSConfiguration.MMS_URL="www.mms-kaist.com:8088";
+//		MMSConfiguration.MMS_URL="www.mms-kaist.com:8088";
+//		MMSConfiguration.MMS_URL="mms.smartnav.org:444";
+		MMSConfiguration.MMS_URL="mms.smartnav.org:8088";
+		MMSConfiguration.DEBUG=true;
 		for(int i=0; i<args.length; i+=2)
 	    {
 	        String key = args[i];

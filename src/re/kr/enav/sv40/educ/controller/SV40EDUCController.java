@@ -11,6 +11,8 @@ Modifier :
 package re.kr.enav.sv40.educ.controller;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.swing.JOptionPane;
 
@@ -44,6 +46,9 @@ public class SV40EDUCController {
 	private TaskManager m_taskDownload;
 	private TaskManager m_taskMC;
 	private boolean m_downComplete;
+	
+	private Date m_dtReq;
+	private Date m_dtReqZone;
 	
 	public interface CallbackView {
 		void updateProgress(int nPercent, String label);
@@ -209,7 +214,7 @@ public class SV40EDUCController {
 			String gml = SV40EncReq.getEncReq("EN", jsonConfig, report);
 			addLog(el, "Requested update check for - EN");
 			debugLog(el, gml);
-	
+			m_dtReq = new Date();
 			m_mcClient.sendMessage(gml);
 		} 
 		else 
@@ -299,7 +304,7 @@ public class SV40EDUCController {
 			String gml = SV40EncReq.getEncReq("ER", jsonConfig, report);
 			addLog(el, "Requested update check for - ER");
 			debugLog(el, gml);
-			
+			m_dtReq = new Date();
 			m_mcClient.sendMessage(gml);
 		} 
 		else 
@@ -392,7 +397,7 @@ public class SV40EDUCController {
 			String gml = SV40EncZoneReq.getEncZoneReq(jsonConfig);
 			addLog(el, "Requested zone info.");
 			debugLog(el, gml);
-		
+			m_dtReqZone = new Date();
 			m_mcClient.sendMessage(gml);
 		} 
 		else 
@@ -674,18 +679,16 @@ public class SV40EDUCController {
 	public void processMCMessageReceive(JsonObject jsonResponse) {
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		
-		addLog(el, "Received update items "+ jsonResponse.size());
+		Date dtCur = new Date();
+		long sec = dtCur.getTime() - m_dtReq.getTime();
+		String detail = (new SimpleDateFormat("mm:ss.SSS")).format(new Date(sec));
+		addLog(el, "Received update (" + detail + ")");
+		
 		String result = jsonResponse.get("result").getAsString();
 		String message = jsonResponse.get("message").getAsString();
 		
-		if (result.equals("error")) {
-			addLog(el, "Update Error: " + message);
-			return;
-		}
-		
 		if (!result.equals("ok")) {
 			addLog(el, "Update Error: " + message);
-			//addLog("Update Error : Unknown");
 			return;
 		}
 		
@@ -709,7 +712,8 @@ public class SV40EDUCController {
 	    } else {
 			// start to download
 			for (int i=0; i<nSizePackages; i++) {
-				startDownload((JsonObject)jsonPackages.get(i));
+				JsonObject jsonPackage = (JsonObject)jsonPackages.get(i);
+				startDownload(jsonPackage);
 				
 				// download complete wait
 				try {
@@ -726,16 +730,14 @@ public class SV40EDUCController {
 	public void processEncZoneReceive(JsonObject jsonResponse) {
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		
-		addLog(el, "Received zone items "+ jsonResponse.size());
+		Date dtCur = new Date();
+		long sec = dtCur.getTime() - m_dtReqZone.getTime();
+		String detail = (new SimpleDateFormat("mm:ss.SSS")).format(new Date(sec));
+		addLog(el, "Received zone (" + detail + ")");
 		debugLog(el, jsonResponse.toString());
 		
 		String result = jsonResponse.get("result").getAsString();
 		String message = jsonResponse.get("message").getAsString();
-		
-		if (result.equals("error")) {
-			addLog(el, "Zone Error " + message);
-			return;
-		}
 		
 		if (!result.equals("ok")) {
 			addLog(el, "Zone Error " + message);
@@ -761,6 +763,15 @@ public class SV40EDUCController {
 		if (m_jsonZone == null) {
 			String msg = SV40EDUErrMessage.get(SV40EDUErrCode.ERR_008, "ZONE");
 			JOptionPane.showMessageDialog(null, msg, "Warning", JOptionPane.INFORMATION_MESSAGE);
-		}
+		} else {
+			// 기존의 report.json을 리네임
+			File file = new File(s_pathOfReport);
+			if (file.exists()) {
+				String tail = (new SimpleDateFormat("yyMMddHHmmss")).format(new Date());
+				File nfile = new File(s_pathOfReport + "_" + tail);
+				file.renameTo(nfile);
+				addLog(el, "rename ("+s_pathOfReport + ") -> (" + s_pathOfReport + "_" + tail + ")");
+			}
+		}		
 	}
 }

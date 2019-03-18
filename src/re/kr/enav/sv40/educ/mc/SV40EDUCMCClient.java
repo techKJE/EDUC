@@ -26,6 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import kr.ac.kaist.mms_client.MMSClientHandler;
+import kr.ac.kaist.mms_client.SecureMMSClientHandler;
 import net.etri.pkilib.client.ClientPKILibrary;
 import net.etri.pkilib.tool.ByteConverter;
 import re.kr.enav.sv40.educ.controller.SV40EDUCController;
@@ -47,7 +48,9 @@ public class SV40EDUCMCClient extends Thread{
 	private SV40EDUCController m_controller;
 	private JsonObject m_config;
 	private MMSClientHandler m_handlerMCSender;
-	private MMSClientHandler m_handlerMCReceiver;
+	private MMSClientHandler m_handlerMCReceiver;	
+//	private SecureMMSClientHandler m_handlerMCSender;
+//	private SecureMMSClientHandler m_handlerMCReceiver;
 	private String m_strSrcMRN;
 	private String m_strDestServiceMRN;
 	private String m_strDestMccMRN;
@@ -155,8 +158,10 @@ public class SV40EDUCMCClient extends Thread{
 	 * @brief initialize MC Sender 
 	 */	
 	private void initSender() throws Exception {
-		m_handlerMCSender = new MMSClientHandler(m_strSrcMRN);
-		m_handlerMCSender.setSender(new MMSClientHandler.ResponseCallback (){
+	m_handlerMCSender = new MMSClientHandler(m_strSrcMRN);
+	m_handlerMCSender.setSender(new MMSClientHandler.ResponseCallback (){
+//	m_handlerMCSender = new SecureMMSClientHandler(m_strSrcMRN);
+//	m_handlerMCSender.setSender(new SecureMMSClientHandler.ResponseCallback (){
 			@Override
 			public void callbackMethod(Map<String, List<String>> headerField, String message) {
 				printHeader("MC Sender", headerField);
@@ -190,10 +195,12 @@ public class SV40EDUCMCClient extends Thread{
 	private void initReceiver() throws Exception {
 		int pollInterval = 1000;
 		m_handlerMCReceiver = new MMSClientHandler(m_strSrcMRN);
+//		m_handlerMCReceiver = new SecureMMSClientHandler(m_strSrcMRN);
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		boolean useS10x=true;
 		
 		m_handlerMCReceiver.startPolling(m_strDestMccMRN, m_strDestServiceMRN, pollInterval, new MMSClientHandler.PollingResponseCallback() {
+//		m_handlerMCReceiver.startPolling(m_strDestMccMRN, m_strDestServiceMRN, pollInterval, new SecureMMSClientHandler.PollingResponseCallback() {
 			@Override
 			public void callbackMethod(Map<String, List<String>> headerField, List<String> messages) {
 				printHeader("MC Receiver",headerField);
