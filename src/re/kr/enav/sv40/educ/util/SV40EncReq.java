@@ -76,6 +76,7 @@ public class SV40EncReq {
 			// base zones
 			JsonObject jsonLocalZone = report.getBaseZone(localZone);
 			if (jsonLocalZone == null) {
+				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
 				request.appendChild(getENCRequest(doc, "base zones", localZone, zonever, version, releaseDate));
 			} else {
 				String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
@@ -106,6 +107,7 @@ public class SV40EncReq {
 			// update zones
 			jsonLocalZone = report.getUpdateZone(localZone);
 			if (jsonLocalZone == null) {
+				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
 				request.appendChild(getENCRequest(doc, "update zones", localZone, zonever, version, releaseDate));
 			} else {
 				String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");

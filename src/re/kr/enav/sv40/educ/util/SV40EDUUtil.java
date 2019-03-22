@@ -268,7 +268,7 @@ public class SV40EDUUtil {
 			JsonObject jsonZone = jsonZones.get(i).getAsJsonObject();
 			String localZone = jsonZone.get("name").getAsString();
 			
-			if (zone.equals(localZone)) {
+			if (zone.equals(localZone) || zone.equals("A1")) {
 				ver = jsonZone.get("ver").getAsString();
 				break;
 			}
