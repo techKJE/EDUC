@@ -175,6 +175,7 @@ public class SV40S101UpdateStatusReport {
 			jsonZones = m_jsonReport.get("updatezones").getAsJsonArray();
 		
 		String fileZone = jsonENCUpdateFile.get("zone").getAsString();
+		String zoneVer = jsonENCUpdateFile.get("zonever").getAsString();
 		String fileVersion = jsonENCUpdateFile.get("version").getAsString();
 		String fileReleaseDate = jsonENCUpdateFile.get("releaseDate").getAsString();
 		
@@ -201,6 +202,7 @@ public class SV40S101UpdateStatusReport {
 		// 현재보다 낮은 버전은 기록하지 않는다
 		if (curVersion == null || curVersion.compareTo(fileVersion) < 0) {
 			jsonTargetZone.addProperty("zone", fileZone);
+			jsonTargetZone.addProperty("zonever", zoneVer);
 			jsonTargetZone.addProperty("version", fileVersion);
 			jsonTargetZone.addProperty("releaseDate", fileReleaseDate);
 		}
