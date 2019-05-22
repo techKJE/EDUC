@@ -113,7 +113,7 @@ public class SV40EncReq {
 				String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
 				version = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "version");
 				releaseDate = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "releaseDate");
-				request.appendChild(getENCRequest(doc, "update zones", localZone, zonever, version, releaseDate));
+				request.appendChild(getENCRequest(doc, "update zones", localZone, curzonever, version, releaseDate));
 			}
 
 //			jsonZones = report.getUpdateZones();
