@@ -12,6 +12,7 @@ package re.kr.enav.sv40.educ.controller;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import javax.swing.JOptionPane;
@@ -495,6 +496,35 @@ public class SV40EDUCController {
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		addLog(el, "Cancel download");
 	}
+	
+	
+	public ArrayList<String> searchZones(String destDir, String fileCategory) throws Exception {
+		ArrayList<String> zones = new ArrayList<String>();
+		boolean bEN = fileCategory.equals("EN");
+		String[] names = {
+			"S-101",
+			"S-63-101",
+			"S-57",
+			"S-63",
+		};
+
+		for (String name:names) {
+			String path = String.format("%s/%s%s/M01X01/%s/ENC_ROOT/KR", destDir, name, (bEN)? "Base":"Update", (bEN)? "B1":"U1");
+			File dir = new File(path);
+			if (!dir.exists())
+				continue;
+
+			File[] files = dir.listFiles();
+			for (File file:files) {
+				if (file.isDirectory())
+					zones.add(file.getName());
+			}
+			break;
+		}
+		
+		return zones;
+	}
+	
 	/**
 	 * @brief add log
 	 * @details add log
@@ -507,8 +537,17 @@ public class SV40EDUCController {
 		// unzip file
 		try {
 			String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
+			String fileZone = SV40EDUUtil.queryJsonValueToString(jsonFile, "zone");
 			addLog(el, "starting unzip - " + fileName);			
 			String destDir = unzip(zipFilePath, jsonFile);
+			
+			// A1 상세 존정보 추출
+			ArrayList<String> zones = null;
+			if (fileZone.equals("A1")) {
+				String fileCategory = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileCategory");
+				zones = searchZones(destDir, fileCategory);
+				addLog(el, "detail zones " + zones.toString());
+			}  
 			addLog(el, "Ready to use ENC");
 			
 			// S-101
@@ -524,7 +563,7 @@ public class SV40EDUCController {
 //				report.updateReportFromCatalog(pathOfCatalog);
 //			}
 			
-			report.updateReportFromENCUpdateFile(jsonFile);
+			report.updateReportFromENCUpdateFile(jsonFile, zones);
 			report.save();
 			updateProgress(0, "Ready to use");
 			
@@ -634,7 +673,7 @@ public class SV40EDUCController {
 	}
 	/**
 	 * @brief start maritime cloud client
-	 * @details stop maritime cloud client
+	 * @details start maritime cloud client
 	 */			
 	public void startMCClient() {
 		SV40EDUCController controller = this;

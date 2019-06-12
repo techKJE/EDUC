@@ -149,13 +149,117 @@ public class SV40S101UpdateStatusReport {
 		return jsonZones;
 	}
 	
+	//
+	public void updateAssociation(boolean bEN, JsonObject jsonTarget, ArrayList<String> zones) {
+		/*
+		 * 1. EN일때
+		 * A1)
+		 * - 세부 zone의 base version 갱신 또는 추가
+		 * - 세부 zone의 update version 삭제
+		 * 
+		 * S1..W4)
+		 * - 해당 zone의 update version 삭제
+		 * 
+		 * 2. ER일때
+		 * A1)
+		 * - 세부 zone의 update version 갱신 또는 추가
+		 */
+		JsonArray jsonBZones = getBaseZones();
+		JsonArray jsonUZones = getUpdateZones();
+		
+		// A1 zonever, version, releaseDate
+		String fileZone = jsonTarget.get("zone").getAsString();
+		String zoneVer = jsonTarget.get("zonever").getAsString();
+		String fileVersion = jsonTarget.get("version").getAsString();
+		String fileReleaseDate = jsonTarget.get("releaseDate").getAsString();
+		
+		if (bEN) {
+			// A1이 아닌 경우도 해당 zone의 update 정보를 삭제 
+			if (!fileZone.equals("A1")) {
+				for (int idx=0; idx<jsonUZones.size(); idx++) {
+					JsonObject jsonZone = jsonUZones.get(idx).getAsJsonObject();
+					String localZone = jsonZone.get("zone").getAsString();
+					if (fileZone.equals(localZone)) {
+						jsonUZones.remove(idx);
+						break;	
+					}
+				}
+				return;
+			}
+			
+			for (int i=0; i<zones.size(); i++) {
+				String zone = zones.get(i);
+				boolean find = false;
+				for (int idx=0; idx<jsonBZones.size(); idx++) {
+					JsonObject jsonZone = jsonBZones.get(idx).getAsJsonObject();
+					String localZone = jsonZone.get("zone").getAsString();
+					find = zone.equals(localZone); 
+					if (!find)
+						continue;
+					
+					jsonZone.addProperty("zonever", zoneVer);
+					jsonZone.addProperty("version", fileVersion);
+					jsonZone.addProperty("releaseDate", fileReleaseDate);
+					break;
+				}
+				
+				if (!find) {
+					JsonObject jsonZone = new JsonObject();
+					jsonZone.addProperty("zone", zone);
+					jsonZone.addProperty("zonever", zoneVer);
+					jsonZone.addProperty("version", fileVersion);
+					jsonZone.addProperty("releaseDate", fileReleaseDate);
+					jsonBZones.add(jsonZone);
+				}
+
+				for (int idx=0; idx<jsonUZones.size(); idx++) {
+					JsonObject jsonZone = jsonUZones.get(idx).getAsJsonObject();
+					String localZone = jsonZone.get("zone").getAsString();
+					if (zone.equals(localZone)) {
+						jsonUZones.remove(idx);
+						break;	
+					}
+				}
+			}
+		} else {
+			if (!fileZone.equals("A1")) 
+				return;
+			
+			for (int i=0; i<zones.size(); i++) {
+				String zone = zones.get(i);
+				boolean find = false;
+				for (int idx=0; idx<jsonUZones.size(); idx++) {
+					JsonObject jsonZone = jsonUZones.get(idx).getAsJsonObject();
+					String localZone = jsonZone.get("zone").getAsString();
+					find = zone.equals(localZone); 
+					if (!find) 
+						continue;
+					
+					jsonZone.addProperty("zonever", zoneVer);
+					jsonZone.addProperty("version", fileVersion);
+					jsonZone.addProperty("releaseDate", fileReleaseDate);
+					break;
+				}
+				
+				if (!find) {
+					JsonObject jsonZone = new JsonObject();
+					jsonZone.addProperty("zone", zone);
+					jsonZone.addProperty("zonever", zoneVer);
+					jsonZone.addProperty("version", fileVersion);
+					jsonZone.addProperty("releaseDate", fileReleaseDate);
+					jsonUZones.add(jsonZone);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * @brief parse ENC Catalog file and update report
 	 * @details parse ENC Catalog file and update report
 	 * @param pathOfCatalog file path of catalog
 	 * @throws Exception 
 	 */			
-	public boolean updateReportFromENCUpdateFile(JsonObject jsonENCUpdateFile) {
+	public boolean updateReportFromENCUpdateFile(JsonObject jsonENCUpdateFile, ArrayList<String> zones) {
 		boolean bRet = true;
 		
 		if (!m_jsonReport.has("basezones")) {
@@ -166,13 +270,9 @@ public class SV40S101UpdateStatusReport {
 			m_jsonReport.add("updatezones",  new JsonArray());
 		}
 
-		JsonArray jsonZones;
-		
 		String fileCategory = jsonENCUpdateFile.get("fileCategory").getAsString();
-		if (fileCategory.equals("EN"))
-			jsonZones = m_jsonReport.get("basezones").getAsJsonArray();
-		else
-			jsonZones = m_jsonReport.get("updatezones").getAsJsonArray();
+		boolean bEN = fileCategory.equals("EN");
+		JsonArray jsonZones = (bEN)? getBaseZones():getUpdateZones();
 		
 		String fileZone = jsonENCUpdateFile.get("zone").getAsString();
 		String zoneVer = jsonENCUpdateFile.get("zonever").getAsString();
@@ -205,10 +305,13 @@ public class SV40S101UpdateStatusReport {
 			jsonTargetZone.addProperty("zonever", zoneVer);
 			jsonTargetZone.addProperty("version", fileVersion);
 			jsonTargetZone.addProperty("releaseDate", fileReleaseDate);
+			
+			updateAssociation(bEN, jsonTargetZone, zones);
 		}
 		
 		return bRet;
 	}
+	
 	/**
 	 * @brief parse ENC Catalog file and update report
 	 * @details parse ENC Catalog file and update report
