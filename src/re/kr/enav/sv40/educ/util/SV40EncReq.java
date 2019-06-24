@@ -70,67 +70,41 @@ public class SV40EncReq {
 			String longitude = SV40EDUUtil.queryJsonValueToString(config, "ecs.position.lon");	
 			request.appendChild(getVesselPosition(doc, latitude, longitude));
 			
-			String localZone = SV40EDUUtil.queryJsonValueToString(config, "enc.zone");
+//			String localZone = SV40EDUUtil.queryJsonValueToString(config, "enc.zone");
+			String[] localZones = SV40EDUUtil.queryJsonValueToString(config, "enc.zone").split(",");
 			String version = "", releaseDate = "", zonever = "", zone="";
 			
-			// base zones
-			JsonObject jsonLocalZone = report.getBaseZone(localZone);
-			if (jsonLocalZone == null) {
-				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
-				request.appendChild(getENCRequest(doc, "base zones", localZone, zonever, version, releaseDate));
-			} else {
-				String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
-				version = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "version");
-				releaseDate = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "releaseDate");
-				request.appendChild(getENCRequest(doc, "base zones", localZone, curzonever, version, releaseDate));
-			}
 			
-//			JsonArray jsonZones = report.getBaseZones();
-//			if (jsonZones == null) {
-//				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
-//				request.appendChild(getENCRequest(doc, "base zones", localZone, zonever, version, releaseDate));
-//			} else {
-//				for (int i=0; i<jsonZones.size(); i++) {
-//					JsonObject curZone = jsonZones.get(i).getAsJsonObject();
-//					
-//					zone = curZone.get("zone").getAsString();
-//					zonever = curZone.get("zonever").getAsString();
-//					version = curZone.get("version").getAsString();
-//					releaseDate = curZone.get("releaseDate").getAsString();
-//					request.appendChild(getENCRequest(doc, "base zones", zone, zonever, version, releaseDate));
-//				}
-//			}
-
-			version = "";
-			releaseDate = "";
-			
-			// update zones
-			jsonLocalZone = report.getUpdateZone(localZone);
-			if (jsonLocalZone == null) {
-				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
-				request.appendChild(getENCRequest(doc, "update zones", localZone, zonever, version, releaseDate));
-			} else {
-				String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
-				version = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "version");
-				releaseDate = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "releaseDate");
-				request.appendChild(getENCRequest(doc, "update zones", localZone, curzonever, version, releaseDate));
+			for (int i=0; i<localZones.length; i++) {
+				String localZone = localZones[i];
+				
+				// base zones
+				JsonObject jsonLocalZone = report.getBaseZone(localZone);
+				if (jsonLocalZone == null) {
+					zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
+					request.appendChild(getENCRequest(doc, "base zones", localZone, zonever, version, releaseDate));
+				} else {
+					String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
+					version = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "version");
+					releaseDate = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "releaseDate");
+					request.appendChild(getENCRequest(doc, "base zones", localZone, curzonever, version, releaseDate));
+				}
+				
+				version = "";
+				releaseDate = "";
+				
+				// update zones
+				jsonLocalZone = report.getUpdateZone(localZone);
+				if (jsonLocalZone == null) {
+					zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
+					request.appendChild(getENCRequest(doc, "update zones", localZone, zonever, version, releaseDate));
+				} else {
+					String curzonever = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "zonever");
+					version = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "version");
+					releaseDate = SV40EDUUtil.queryJsonValueToString(jsonLocalZone, "releaseDate");
+					request.appendChild(getENCRequest(doc, "update zones", localZone, curzonever, version, releaseDate));
+				}
 			}
-
-//			jsonZones = report.getUpdateZones();
-//			if (jsonZones == null) {
-//				zonever = SV40EDUUtil.getZoneVer(jsonZone, localZone);
-//				request.appendChild(getENCRequest(doc, "update zones", localZone, zonever, version, releaseDate));
-//			} else {
-//				for (int i=0; i<jsonZones.size(); i++) {
-//					JsonObject curZone = jsonZones.get(i).getAsJsonObject();
-//					
-//					zone = curZone.get("zone").getAsString();
-//					zonever = curZone.get("zonever").getAsString();
-//					version = curZone.get("version").getAsString();
-//					releaseDate = curZone.get("releaseDate").getAsString();
-//					request.appendChild(getENCRequest(doc, "update zones", zone, zonever, version, releaseDate));
-//				}
-//			}
 			
 			//
 			Transformer xfer = TransformerFactory.newInstance().newTransformer();

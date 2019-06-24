@@ -516,6 +516,7 @@ public class SV40EDUCController {
 
 			File[] files = dir.listFiles();
 			for (File file:files) {
+				System.out.println("file: " + file.getName());
 				if (file.isDirectory())
 					zones.add(file.getName());
 			}
@@ -540,6 +541,7 @@ public class SV40EDUCController {
 			String fileZone = SV40EDUUtil.queryJsonValueToString(jsonFile, "zone");
 			addLog(el, "starting unzip - " + fileName);			
 			String destDir = unzip(zipFilePath, jsonFile);
+			addLog(el, "completed unzip");
 			
 			// A1 상세 존정보 추출
 			ArrayList<String> zones = null;
