@@ -557,7 +557,7 @@ public class SV40EDUCController {
 //			String pathOfCatalog = destDir+"\\"+s_nameOfCatalog;
 
 			// 압축해제후 1초 지연처리(catalog 접근 오류)
-			Thread.sleep(1000);
+//			Thread.sleep(1000);
 			
 //			// S-101 카탈로그가 있으면 기록
 //			File f = new File(pathOfCatalog);
@@ -764,7 +764,7 @@ public class SV40EDUCController {
 	    } else {
 			// start to download
 	    	Date now = new Date();
-	    	SimpleDateFormat ftDate = new SimpleDateFormat ("yyyyMMddhhmmssSSS");
+	    	SimpleDateFormat ftDate = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 	    	String workdir = String.format("%s_%d", ftDate.format(now), nSizePackages);
 			for (int i=0; i<nSizePackages; i++) {
 				JsonObject jsonPackage = (JsonObject)jsonPackages.get(i);

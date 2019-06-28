@@ -59,7 +59,7 @@ public class SV40EDUCMainView extends JFrame implements ActionListener {
 
 	private static final Logger m_logger = Logger.getLogger(SV40EDUCMainView.class);
 	
-	SimpleDateFormat m_ftDate = new SimpleDateFormat ("yyyy.MM.dd hh:mm:ss.SSS");	/**< date format for logging message */
+	SimpleDateFormat m_ftDate = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss.SSS");	/**< date format for logging message */
 	
 	private SV40EDUCController m_controller;
 	private DefaultListModel<String> m_listModel;
