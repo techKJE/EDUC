@@ -531,7 +531,7 @@ public class SV40EDUCController {
 	 * @details add log
 	 * @param message message to log
 	 */		
-	public void completeDownload(String zipFilePath,JsonObject jsonFile) {
+	public void completeDownload(String workdir, String zipFilePath, JsonObject jsonFile) {
 		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
 		
 		addLog(el, "completed download");
@@ -540,7 +540,7 @@ public class SV40EDUCController {
 			String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
 			String fileZone = SV40EDUUtil.queryJsonValueToString(jsonFile, "zone");
 			addLog(el, "starting unzip - " + fileName);			
-			String destDir = unzip(zipFilePath, jsonFile);
+			String destDir = unzip(workdir, zipFilePath, jsonFile);
 			addLog(el, "completed unzip");
 			
 			// A1 상세 존정보 추출
@@ -588,12 +588,13 @@ public class SV40EDUCController {
 	 * @details add log
 	 * @param message message to log
 	 */		
-	public String unzip(String zipFilePath,JsonObject jsonFile) throws Exception {
+	public String unzip(String workdir, String zipFilePath,JsonObject jsonFile) throws Exception {
+		StackTraceElement el = Thread.currentThread().getStackTrace()[1];
+		
 		JsonObject jsonConfig = getConfig();
 		String fileName = SV40EDUUtil.queryJsonValueToString(jsonFile, "fileName");
-		String destDirectory = SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.path") +"\\"+
-				fileName.substring(0, fileName.lastIndexOf("."));
-				//SV40EDUUtil.queryJsonValueToString(jsonFile, "destPath");
+		String destDirectory = String.format("%s/%s/%s", SV40EDUUtil.queryJsonValueToString(jsonConfig, "enc.path"), 
+				workdir, fileName.substring(0, fileName.lastIndexOf(".")));
 		
 		UnzipParameters param = new UnzipParameters();
 		param.setIgnoreAllFileAttributes(true);
@@ -603,54 +604,64 @@ public class SV40EDUCController {
 		zipFile.extractAll(destDirectory, param);
 		ProgressMonitor progressMonitor = zipFile.getProgressMonitor();
 		
-		boolean isCompleted = false;
-		int nPrevPercent = -1;
-		while (!isCompleted && progressMonitor.getState() == ProgressMonitor.STATE_BUSY) {
+		while (progressMonitor.getState() == ProgressMonitor.STATE_BUSY) {
 			int nPercent = progressMonitor.getPercentDone();
-			if (nPrevPercent != nPercent) {			
-				updateProgress(nPercent, String.format("unziping %d%%", nPercent));
-				nPrevPercent = nPercent;
-			}
-			if (nPercent == 100) {
-				isCompleted = true;
-			} else {
-				// give time to update progress bar
-				try {
-					Thread.sleep(50);
-				} catch(Exception e) {
-					
-				}
-				switch (progressMonitor.getCurrentOperation()) {
-				case ProgressMonitor.OPERATION_NONE:
-//						System.out.println("no operation being performed");
-					break;
-				case ProgressMonitor.OPERATION_ADD:
-//						System.out.println("Add operation");
-					break;
-				case ProgressMonitor.OPERATION_EXTRACT:
-//						System.out.println("Extract operation");
-					break;
-				case ProgressMonitor.OPERATION_REMOVE:
-//						System.out.println("Remove operation");
-					break;
-				case ProgressMonitor.OPERATION_CALC_CRC:
-//						System.out.println("Calculating CRC");
-					break;
-				case ProgressMonitor.OPERATION_MERGE:
-//						System.out.println("Merge operation");
-					break;
-				default:
-					isCompleted = true;
-//						System.out.println("invalid operation");
-					break;
-				}
-			}
+			updateProgress(nPercent, String.format("unziping %d%%", nPercent));
+			Thread.sleep(5);
 		}
+		
+		if (progressMonitor.getResult() == ProgressMonitor.RESULT_ERROR) {
+			if (progressMonitor.getException() != null)
+				debugLog(el, progressMonitor.getException().getMessage());
+		}
+		
+//		boolean isCompleted = false;
+//		int nPrevPercent = -1;
+//		while (!isCompleted && progressMonitor.getState() == ProgressMonitor.STATE_BUSY) {
+//			int nPercent = progressMonitor.getPercentDone();
+//			if (nPrevPercent != nPercent) {			
+//				updateProgress(nPercent, String.format("unziping %d%%", nPercent));
+//				nPrevPercent = nPercent;
+//			}
+//			if (nPercent == 100) {
+//				isCompleted = true;
+//			} else {
+//				// give time to update progress bar
+//				try {
+//					Thread.sleep(50);
+//				} catch(Exception e) {
+//					
+//				}
+//				switch (progressMonitor.getCurrentOperation()) {
+//				case ProgressMonitor.OPERATION_NONE:
+////						System.out.println("no operation being performed");
+//					break;
+//				case ProgressMonitor.OPERATION_ADD:
+////						System.out.println("Add operation");
+//					break;
+//				case ProgressMonitor.OPERATION_EXTRACT:
+////						System.out.println("Extract operation");
+//					break;
+//				case ProgressMonitor.OPERATION_REMOVE:
+////						System.out.println("Remove operation");
+//					break;
+//				case ProgressMonitor.OPERATION_CALC_CRC:
+////						System.out.println("Calculating CRC");
+//					break;
+//				case ProgressMonitor.OPERATION_MERGE:
+////						System.out.println("Merge operation");
+//					break;
+//				default:
+//					//isCompleted = true;
+////						System.out.println("invalid operation");
+//					break;
+//				}
+//			}
+//		}
 		
 		String extractDirectory = destDirectory+"\\ENC_ROOT";  
 		File file = new File(extractDirectory);
 		return (file.isDirectory())? extractDirectory:destDirectory;  
-		//return destDirectory;
 	}	
 	
 	/**
@@ -658,7 +669,7 @@ public class SV40EDUCController {
 	 * @details add log
 	 * @param message message to log
 	 */			
-	public void startDownload(JsonObject jsonMessage) {
+	public void startDownload(String workdir, JsonObject jsonMessage) {
 		//m_downComplete = false;
 		setDownComplete(false);
 		
@@ -667,7 +678,7 @@ public class SV40EDUCController {
 		m_taskDownload.setTask(new TaskManager.Task() {
 			@Override
 			public void work() {		
-				new SV40EDUCDownloader(controller, jsonMessage, m_taskDownload);
+				new SV40EDUCDownloader(controller, workdir, jsonMessage, m_taskDownload);
 			}
 		
 		});
@@ -752,9 +763,12 @@ public class SV40EDUCController {
 	    	addLog(el, "ENC download cancel");
 	    } else {
 			// start to download
+	    	Date now = new Date();
+	    	SimpleDateFormat ftDate = new SimpleDateFormat ("yyyyMMddhhmmssSSS");
+	    	String workdir = String.format("%s_%d", ftDate.format(now), nSizePackages);
 			for (int i=0; i<nSizePackages; i++) {
 				JsonObject jsonPackage = (JsonObject)jsonPackages.get(i);
-				startDownload(jsonPackage);
+				startDownload(workdir, jsonPackage);
 				
 				// download complete wait
 				try {

@@ -50,11 +50,13 @@ public class SV40EDUCHTTPDownloader extends Thread {
 	protected String m_strMD5Hash;
 	protected JsonObject m_jsonFile;
 	protected JsonObject m_jsonConfig;
+	protected String m_workdir;
 	
 	private TaskManager m_taskManager =null;		/**< reference task manager */
 	
-	public SV40EDUCHTTPDownloader(SV40EDUCController controller, JsonObject jsonFile) {
+	public SV40EDUCHTTPDownloader(SV40EDUCController controller, String workdir, JsonObject jsonFile) {
 		m_controller = controller;
+		m_workdir = workdir;
 		m_jsonFile = jsonFile;
 		m_jsonConfig = controller.getConfig(); 
 		m_strSrcUrl = m_jsonFile.get("url").getAsString();
@@ -83,7 +85,7 @@ public class SV40EDUCHTTPDownloader extends Thread {
 		try {
 			nRet = download(m_strSrcUrl, m_strDestFilePath, m_strMD5Hash);
 			if (nRet > 0) {
-				m_controller.completeDownload(m_strDestFilePath, m_jsonFile);
+				m_controller.completeDownload(m_workdir, m_strDestFilePath, m_jsonFile);
 				m_controller.setDownComplete(true);
 				m_taskManager.completed();
 				return;
